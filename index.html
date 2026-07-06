@@ -16,112 +16,158 @@
 <body class="bg-stone-100 text-stone-800 font-sans min-h-screen pb-12">
 
     <header class="bg-stone-900 text-stone-100 shadow-md sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-xl font-bold tracking-wider">🚗 養車共乘系統 Premium v5</h1>
             <div id="cloudStatus" class="flex items-center gap-2 bg-stone-800 px-3 py-1.5 rounded-full border border-stone-700 transition-all">
                 <span class="w-2 h-2 rounded-full bg-amber-500 pulse-glow"></span>
-                <span class="text-stone-400 font-medium text-[10px]">雲端資料初始化中...</span>
+                <span class="text-stone-400 font-medium text-[10px]">雲端資料同步中...</span>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <main class="max-w-7xl mx-auto px-4 mt-6 space-y-6">
         
-        <div class="md:col-span-1 space-y-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">系統數據摘要</h2>
-                <div class="space-y-4">
-                    <div>
-                        <span class="text-xs text-stone-500">初始里程數</span>
-                        <p id="dashInitialMileage" class="text-2xl font-semibold text-stone-700">-- km</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                <span class="text-xs font-medium text-stone-400 block mb-1">系統里程狀態</span>
+                <div class="space-y-1">
+                    <div class="text-xs text-stone-500 flex justify-between">
+                        <span>初始:</span> <span id="dashInitialMileage" class="font-mono font-semibold">-- km</span>
                     </div>
-                    <div>
-                        <span class="text-xs text-stone-500">目前最新里程</span>
-                        <p id="dashCurrentMileage" class="text-3xl font-bold text-emerald-600">-- km</p>
-                    </div>
-                    <div class="border-t border-stone-100 pt-3 flex justify-between text-sm">
-                        <span class="text-stone-500">本月累計筆數</span>
-                        <span id="dashRecordCount" class="font-semibold text-stone-700">0 筆</span>
+                    <div class="text-xs text-stone-500 flex justify-between">
+                        <span>最新:</span> <span id="dashCurrentMileage" class="text-emerald-600 font-mono font-bold text-lg">-- km</span>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-4">
-                <h3 class="text-sm font-bold text-stone-700 border-b border-stone-100 pb-2">新增里程 / 費用紀錄</h3>
-                
-                <div>
-                    <label class="block text-xs font-medium text-stone-500 mb-1">紀錄類型</label>
-                    <select id="inputDocType" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
-                        <option value="mileage">🚗 里程更新</option>
-                        <option value="expense">💰 費用支出</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-stone-500 mb-1">日期</label>
-                    <input type="date" id="inputDate" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-stone-500 mb-1">數值 (里程數 km / 費用金額 $)</label>
-                    <input type="number" id="inputValue" placeholder="請輸入數字" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-stone-500 mb-1">備註 / 駕駛員 / 事由</label>
-                    <input type="text" id="inputNote" placeholder="例如：張三 (出差) 或 加油維修" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
-                </div>
-
-                <button onclick="addNewRecord()" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-medium text-sm py-2.5 rounded-lg transition-colors shadow-sm">
-                    確認送出紀錄
-                </button>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                <span class="text-xs font-medium text-stone-400 block mb-1">🧑‍✈️ 駕駛 T 歷史總里程</span>
+                <p id="dashTkm" class="text-xl font-bold text-stone-700 font-mono">-- km</p>
+                <span class="text-[10px] text-stone-400" id="dashTyreBaseT">輪胎基線: -- km</span>
             </div>
-
-            <div class="bg-stone-50 p-4 rounded-2xl border border-stone-200/60">
-                <p class="text-xs text-stone-500 mb-3">當月份帳目與里程確認無誤後，可歸檔至歷史資料庫：</p>
-                <button onclick="closeCurrentMonth()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm py-2 rounded-lg transition-colors shadow-sm">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                <span class="text-xs font-medium text-stone-400 block mb-1">👩‍✈️ 駕駛 K 歷史總里程</span>
+                <p id="dashKkm" class="text-xl font-bold text-stone-700 font-mono">-- km</p>
+                <span class="text-[10px] text-stone-400" id="dashTyreBaseK">輪胎基線: -- km</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                <span class="text-xs font-medium text-stone-400 block mb-1">💰 本月支出總計</span>
+                <p id="dashTotalExpense" class="text-2xl font-bold text-amber-600 font-mono">$0</p>
+                <span class="text-[10px] text-stone-400" id="dashExpenseCount">共 0 筆紀錄</span>
+            </div>
+            <div class="bg-stone-900 text-stone-100 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-medium text-stone-400 block">帳務週期管理</span>
+                <button onclick="closeCurrentMonth()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs py-2 rounded-lg transition-colors shadow-sm mt-2">
                     📦 進行本月結算歸檔
                 </button>
             </div>
         </div>
 
-        <div class="md:col-span-2">
-            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-                <div class="px-5 py-4 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-                    <h3 class="font-bold text-stone-700 text-sm">本月即時流水帳紀錄</h3>
-                    <span class="text-xs text-stone-400">即時雲端同步中</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-3">
+                <h3 class="text-sm font-bold text-stone-700 border-b border-stone-100 pb-2 flex items-center gap-2">🚗 新增里程紀錄</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-500 mb-1">日期</label>
+                        <input type="date" id="mileageDate" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-500 mb-1">當前里程數 (km)</label>
+                        <input type="number" id="mileageValue" placeholder="請輸入里程" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                    </div>
                 </div>
-                
+                <div>
+                    <label class="block text-xs font-medium text-stone-500 mb-1">備註 / 駕駛員事由</label>
+                    <input type="text" id="mileageNote" placeholder="例如：Terence (出差)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                </div>
+                <button onclick="addNewMileage()" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-medium text-sm py-2 rounded-lg transition-colors">
+                    登錄里程紀錄
+                </button>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-3">
+                <h3 class="text-sm font-bold text-stone-700 border-b border-stone-100 pb-2 flex items-center gap-2">💰 新增費用支出</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-500 mb-1">日期</label>
+                        <input type="date" id="expenseDate" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-500 mb-1">支出金額 ($)</label>
+                        <input type="number" id="expenseValue" placeholder="請輸入金額" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-stone-500 mb-1">費用項目摘要說明</label>
+                    <input type="text" id="expenseNote" placeholder="例如：中油加油、定期保養" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                </div>
+                <button onclick="addNewExpense()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm py-2 rounded-lg transition-colors">
+                    登錄費用支出
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-stone-700 text-xs tracking-wider uppercase">📋 本月里程更動明細</h3>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-stone-100/50 text-stone-500 text-xs font-semibold border-b border-stone-200">
                                 <th class="p-3">日期</th>
-                                <th class="p-3">類型</th>
-                                <th class="p-3">數據 / 金額</th>
-                                <th class="p-3">摘要說明</th>
+                                <th class="p-3">里程數</th>
+                                <th class="p-3">摘要備註</th>
                                 <th class="p-3 text-center">操作</th>
                             </tr>
                         </thead>
-                        <tbody id="timelineRows" class="text-sm divide-y divide-stone-100">
-                            <tr>
-                                <td colspan="5" class="p-8 text-center text-stone-400 italic">尚無即時數據，請等待加載或新增資料...</td>
+                        <tbody id="mileageRows" class="text-sm divide-y divide-stone-100">
+                            <tr><td colspan="4" class="p-4 text-center text-stone-400 italic">無里程資料</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-stone-700 text-xs tracking-wider uppercase">📋 本月養車支出明細</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-stone-100/50 text-stone-500 text-xs font-semibold border-b border-stone-200">
+                                <th class="p-3">日期</th>
+                                <th class="p-3">金額</th>
+                                <th class="p-3">項目說明</th>
+                                <th class="p-3 text-center">操作</th>
                             </tr>
+                        </thead>
+                        <tbody id="expenseRows" class="text-sm divide-y divide-stone-100">
+                            <tr><td colspan="4" class="p-4 text-center text-stone-400 italic">無費用資料</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+        <div class="bg-white p-4 rounded-xl border border-stone-200 text-xs text-stone-500 flex flex-wrap gap-4 justify-between items-center">
+            <div>
+                <span>🔧 系統核心參數微調：</span>
+                <label class="ml-2">初始里程: <input type="number" id="cfgInitial" class="w-20 border rounded px-1" onchange="updateSystemConfig()"></label>
+                <label class="ml-2">T輪胎基線: <input type="number" id="cfgTyreT" class="w-20 border rounded px-1" onchange="updateSystemConfig()"></label>
+                <label class="ml-2">K輪胎基線: <input type="number" id="cfgTyreK" class="w-20 border rounded px-1" onchange="updateSystemConfig()"></label>
+            </div>
+            <span class="text-[10px] text-stone-400 font-mono">Premium Engine v5.1.0</span>
+        </div>
     </main>
 
     <script type="module">
-        // 📢 報數標記，確認 GitHub Pages 確實成功抓到最新覆蓋版本
-        console.log("📢 報數！這是 2026 全功能終極全覆蓋修正版！");
+        console.log("📢 報數！最愛的舊版 Layout 與輸入方式全面復活！");
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 1. Terence 專屬的 Firebase 金鑰配置
+        // 1. Firebase 連線金鑰
         const firebaseConfig = {
             apiKey: "AIzaSyDCmmNy3jnq1T0nG9BWSd6AIolvNcopFGM",
             authDomain: "track-car-spending.firebaseapp.com",
@@ -136,151 +182,174 @@
         const db = getFirestore(app);
         const docRef = doc(db, "car_sharing_system", "v5_database_premium");
 
-        // 2. 系統狀態核心變數 (完全對接你的資料結構)
+        // 2. 本地核心變數定義
         let systemState = { initialMileage: 85820, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
         let mileageList = []; 
         let expenseList = []; 
         let historyMonths = [];
 
-        // 初始化日期欄位為今天
-        document.getElementById('inputDate').value = new Date().toISOString().slice(0, 10);
+        // 自動將輸入日期預設為今天
+        const todayStr = new Date().toISOString().slice(0, 10);
+        document.getElementById('mileageDate').value = todayStr;
+        document.getElementById('expenseDate').value = todayStr;
 
-        // 3. 雲端資料即時動態監聽
+        // 3. 監聽雲端資料庫
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
-                // 🟢 雲端有房間，同步更新本地變數
                 const cloudData = docSnap.data();
                 systemState = cloudData.systemState || { initialMileage: 85820, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
                 mileageList = cloudData.mileageList || [];
                 expenseList = cloudData.expenseList || [];
                 historyMonths = cloudData.historyMonths || [];
                 
-                // 亮起連線成功綠燈
                 document.getElementById('cloudStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-600 pulse-glow"></span><span class="text-stone-200 font-medium text-[10px]">雲端連線正常</span>';
             } else {
-                // 🟡 雲端是空的，主動進行初始化建房
                 updateCloud();
             }
-            // 不論新舊，皆重新渲染畫面
             calculateAndRender();
         }, (error) => {
-            console.error("Firebase 監聽失敗:", error);
-            document.getElementById('cloudStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span class="text-rose-400 font-medium text-[10px]">權限鎖死 ERROR</span>';
+            console.error("Firebase 連線故障:", error);
+            document.getElementById('cloudStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span class="text-rose-400 font-medium text-[10px]">權限到期鎖死</span>';
         });
 
-        // 4. 強大且安全的雲端資料同步函式
+        // 4. 同步資料至雲端
         async function updateCloud() {
             try {
                 await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths });
             } catch (err) {
-                console.error("🚨 Firebase 寫入大失敗，原因：", err);
-                alert("❌ 資料同步失敗！\n極可能是您的 Firebase Firestore 安全規則 (Rules) 已過期封鎖。\n請至 Firebase 後台將 Rules 改為 allow read, write: if true;");
+                console.error("🚨 雲端寫入失敗:", err);
+                alert("❌ 同步失敗！請至 Firebase 查看規則是否過期。");
             }
         }
 
-        // 5. 畫面渲染與計算法則
+        // 5. 畫面重新渲染與計算法則 (完美對應舊版雙表架構)
         function calculateAndRender() {
-            // 更新儀表板靜態文字
+            // 更新參數微調輸入框數值
+            document.getElementById('cfgInitial').value = systemState.initialMileage;
+            document.getElementById('cfgTyreT').value = systemState.tyreBaseTkm || 0;
+            document.getElementById('cfgTyreK').value = systemState.tyreBaseKkm || 0;
+
+            // 數據卡片渲染
             document.getElementById('dashInitialMileage').innerText = `${systemState.initialMileage.toLocaleString()} km`;
             
-            // 計算目前最新里程數
             let currentLatestMileage = systemState.initialMileage;
             if (mileageList.length > 0) {
                 const maxMileage = Math.max(...mileageList.map(m => Number(m.value)));
                 if (maxMileage > currentLatestMileage) currentLatestMileage = maxMileage;
             }
             document.getElementById('dashCurrentMileage').innerText = `${currentLatestMileage.toLocaleString()} km`;
-            document.getElementById('dashRecordCount').innerText = `${mileageList.length + expenseList.length} 筆`;
 
-            // 渲染綜合流水帳時間軸 (將里程與費用融合排序展示)
-            const timelineRows = document.getElementById('timelineRows');
-            timelineRows.innerHTML = '';
+            // 統計總費用
+            const totalExp = expenseList.reduce((sum, item) => sum + Number(item.value), 0);
+            document.getElementById('dashTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
+            document.getElementById('dashExpenseCount').innerText = `共 ${expenseList.length} 筆紀錄`;
 
-            // 合併兩組陣列並標記類型
-            const combined = [
-                ...mileageList.map((item, idx) => ({ ...item, _type: 'mileage', _originIdx: idx })),
-                ...expenseList.map((item, idx) => ({ ...item, _type: 'expense', _originIdx: idx }))
-            ];
+            // 雙駕駛總里程與輪胎顯示
+            document.getElementById('dashTkm').innerText = `${(systemState.historyTkm || 0).toLocaleString()} km`;
+            document.getElementById('dashKkm').innerText = `${(systemState.historyKkm || 0).toLocaleString()} km`;
+            document.getElementById('dashTyreBaseT').innerText = `輪胎基線: ${(systemState.tyreBaseTkm || 0).toLocaleString()} km`;
+            document.getElementById('dashTyreBaseK').innerText = `輪胎基線: ${(systemState.tyreBaseKkm || 0).toLocaleString()} km`;
 
-            // 依日期由新到舊排序
-            combined.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            if (combined.length === 0) {
-                timelineRows.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-stone-400 italic">本月目前尚無任何紀錄</td></tr>`;
-                return;
-            }
-
-            combined.forEach((item) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-stone-50/60 transition-colors';
-                
-                const typeTag = item._type === 'mileage' 
-                    ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">🚗 里程</span>'
-                    : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">💰 費用</span>';
-
-                const valDisplay = item._type === 'mileage' ? `${Number(item.value).toLocaleString()} km` : `$${Number(item.value).toLocaleString()}`;
-
-                tr.innerHTML = `
-                    <td class="p-3 text-stone-600 font-mono">${item.date}</td>
-                    <td class="p-3">${typeTag}</td>
-                    <td class="p-3 font-semibold text-stone-700">${valDisplay}</td>
-                    <td class="p-3 text-stone-500">${item.note || '-'}</td>
-                    <td class="p-3 text-center">
-                        <button onclick="deleteRecord('${item._type}', ${item._originIdx})" class="text-xs text-rose-500 hover:text-rose-700 font-medium hover:underline">刪除</button>
-                    </td>
-                `;
-                timelineRows.appendChild(tr);
-            });
-        }
-
-        // 6. 新增紀錄控制核心
-        function addNewRecord() {
-            const type = document.getElementById('inputDocType').value;
-            const date = document.getElementById('inputDate').value;
-            const value = Number(document.getElementById('inputValue').value);
-            const note = document.getElementById('inputNote').value.trim();
-
-            if (!date || !value) {
-                alert("請填寫正確的日期與數值！");
-                return;
-            }
-
-            const newObj = { date, value, note };
-
-            if (type === 'mileage') {
-                mileageList.push(newObj);
+            // --- 渲染左側：里程明細表格 ---
+            const mileageRows = document.getElementById('mileageRows');
+            mileageRows.innerHTML = '';
+            // 由新到舊排序
+            const sortedMileage = [...mileageList].sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (sortedMileage.length === 0) {
+                mileageRows.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-stone-400 italic">本月尚無里程紀錄</td></tr>`;
             } else {
-                expenseList.push(newObj);
+                sortedMileage.forEach((item) => {
+                    // 尋找它在原始陣列中的真實 index 以便刪除
+                    const origIdx = mileageList.findIndex(m => m.date === item.date && m.value === item.value && m.note === item.note);
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-stone-50/80 transition-colors';
+                    tr.innerHTML = `
+                        <td class="p-3 text-stone-600 font-mono">${item.date}</td>
+                        <td class="p-3 font-semibold text-stone-700">${Number(item.value).toLocaleString()} km</td>
+                        <td class="p-3 text-stone-500">${item.note || '-'}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteRecord('mileage', ${origIdx})" class="text-xs text-rose-500 hover:text-rose-700 hover:underline">刪除</button>
+                        </td>
+                    `;
+                    mileageRows.appendChild(tr);
+                });
             }
 
-            // 更新至雲端，畫面會經由監聽自動重畫
-            updateCloud();
-            
-            // 清空輸入框
-            document.getElementById('inputValue').value = '';
-            document.getElementById('inputNote').value = '';
+            // --- 渲染右側：費用明細表格 ---
+            const expenseRows = document.getElementById('expenseRows');
+            expenseRows.innerHTML = '';
+            const sortedExpense = [...expenseList].sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (sortedExpense.length === 0) {
+                expenseRows.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-stone-400 italic">本月尚無費用明細</td></tr>`;
+            } else {
+                sortedExpense.forEach((item) => {
+                    const origIdx = expenseList.findIndex(e => e.date === item.date && e.value === item.value && e.note === item.note);
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-stone-50/80 transition-colors';
+                    tr.innerHTML = `
+                        <td class="p-3 text-stone-600 font-mono">${item.date}</td>
+                        <td class="p-3 font-semibold text-amber-700">$ ${Number(item.value).toLocaleString()}</td>
+                        <td class="p-3 text-stone-500">${item.note || '-'}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteRecord('expense', ${origIdx})" class="text-xs text-rose-500 hover:text-rose-700 hover:underline">刪除</button>
+                        </td>
+                    `;
+                    expenseRows.appendChild(tr);
+                });
+            }
         }
 
-        // 7. 刪除紀錄控制核心
-        function deleteRecord(type, originIndex) {
+        // 6. 獨立功能控制項
+        function addNewMileage() {
+            const date = document.getElementById('mileageDate').value;
+            const value = Number(document.getElementById('mileageValue').value);
+            const note = document.getElementById('mileageNote').value.trim();
+
+            if (!date || !value) { alert("請填寫正確的里程日期與數值！"); return; }
+            mileageList.push({ date, value, note });
+            updateCloud();
+            document.getElementById('mileageValue').value = '';
+            document.getElementById('mileageNote').value = '';
+        }
+
+        function addNewExpense() {
+            const date = document.getElementById('expenseDate').value;
+            const value = Number(document.getElementById('expenseValue').value);
+            const note = document.getElementById('expenseNote').value.trim();
+
+            if (!date || !value) { alert("請填寫正確的費用日期與金額！"); return; }
+            expenseList.push({ date, value, note });
+            updateCloud();
+            document.getElementById('expenseValue').value = '';
+            document.getElementById('expenseNote').value = '';
+        }
+
+        function deleteRecord(type, index) {
             if (!confirm("確定要刪除這筆紀錄嗎？")) return;
-            
             if (type === 'mileage') {
-                mileageList.splice(originIndex, 1);
+                mileageList.splice(index, 1);
             } else {
-                expenseList.splice(originIndex, 1);
+                expenseList.splice(index, 1);
             }
             updateCloud();
         }
 
-        // 8. 本月結算歸檔核心 (補足先前遺失的部分)
+        // 底部的手動參數更新
+        function updateSystemConfig() {
+            systemState.initialMileage = Number(document.getElementById('cfgInitial').value) || 85820;
+            systemState.tyreBaseTkm = Number(document.getElementById('cfgTyreT').value) || 0;
+            systemState.tyreBaseKkm = Number(document.getElementById('cfgTyreK').value) || 0;
+            updateCloud();
+        }
+
+        // 7. 本月結算歸檔核心 (徹底解決 missing 故障)
         function closeCurrentMonth() {
             if (mileageList.length === 0 && expenseList.length === 0) {
                 alert("目前本月名冊空空如也，不需結算歸檔喔！");
                 return;
             }
 
-            if (!confirm("確定要執行本月結算嗎？\n結算後，當月的流水帳將全部歸檔至歷史紀錄區，並清空主畫面。")) return;
+            if (!confirm("確定要進行本月結算嗎？\n結算後，當月的流水帳將全部打包存入歷史紀錄，並清空主畫面。")) return;
 
             const archiveData = {
                 archiveId: new Date().toISOString().slice(0, 7), // 產生如 "2026-07"
@@ -289,10 +358,9 @@
                 savedState: { ...systemState }
             };
 
-            // 1. 推入歸檔歷史
             historyMonths.push(archiveData);
 
-            // 2. 如果結算時有最新里程，將其覆蓋為下個月的初始里程
+            // 如果結算時有最新里程，將其滾動覆蓋為下個月的初始里程
             if (mileageList.length > 0) {
                 const maxMileage = Math.max(...mileageList.map(m => Number(m.value)));
                 if (maxMileage > systemState.initialMileage) {
@@ -300,21 +368,21 @@
                 }
             }
 
-            // 3. 清空當月即時緩衝列表
+            // 清空緩衝
             mileageList = [];
             expenseList = [];
 
-            // 4. 同步雲端
             updateCloud();
-            alert("🎉 本月帳目已成功打包歸檔！新一輪記帳已自動開啟。");
+            alert("🎉 本月結算成功！資料已完整歸檔封箱。");
         }
 
-
         // ==========================================
-        // 🌟 終極關鍵：將模組內的功能「外包公開」給全域 HTML 按鈕認領
+        // 🌐 終極救星：將所有 HTML 所需按鈕功能發射到 Window 全域
         // ==========================================
-        window.addNewRecord = addNewRecord;
+        window.addNewMileage = addNewMileage;
+        window.addNewExpense = addNewExpense;
         window.deleteRecord = deleteRecord;
+        window.updateSystemConfig = updateSystemConfig;
         window.closeCurrentMonth = closeCurrentMonth;
 
     </script>

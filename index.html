@@ -6,7 +6,6 @@
     <title>車費里程雲端即時對帳系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 引入 Jost 作為跨全平台完美的 Avenir 幾何人文風格替代字型 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -23,7 +22,6 @@
 </head>
 <body class="text-stone-900 min-h-screen p-4 md:p-12 antialiased">
 
-    <!-- 頂部精緻導航與雲端狀態燈 -->
     <header class="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-stone-200/60 pb-4 gap-4">
         <div>
             <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">FLEET & EXPENSE LOG V5</span>
@@ -34,38 +32,33 @@
                 <span class="w-2 h-2 rounded-full bg-stone-300 pulse-glow"></span>
                 <span>雲端同步初始化中...</span>
             </div>
-            <button onclick="closeCurrentMonth()" class="bg-[#1E1B18] hover:bg-stone-800 text-[#FDFCFB] font-medium text-xs px-4 py-2 rounded-lg transition-all tracking-wider shadow-sm">
+            <button onclick="window.closeCurrentMonth()" class="bg-[#1E1B18] hover:bg-stone-800 text-[#FDFCFB] font-medium text-xs px-4 py-2 rounded-lg transition-all tracking-wider shadow-sm">
                 結算本月
             </button>
         </div>
     </header>
 
-    <!-- 🏆 核心即時結算大看板 -->
     <section class="max-w-6xl mx-auto mb-10">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
-            <!-- 指標 1 -->
             <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
                 <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">本月總里程</span>
                 <p id="heroTotalKm" class="text-2xl font-light tracking-tight text-stone-900 mt-2">0 km</p>
                 <span class="text-[10px] text-stone-400 mt-1">雙方接力行駛小計</span>
             </div>
 
-            <!-- 指標 2 -->
             <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
                 <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">本月總日常支出</span>
                 <p id="heroTotalExpense" class="text-2xl font-light tracking-tight text-stone-900 mt-2">$0</p>
                 <span class="text-[10px] text-stone-400 mt-1">包含充電與常規費</span>
             </div>
 
-            <!-- 指標 3 -->
             <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
                 <span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">💡 焦點一：Ken 應分擔</span>
                 <p id="heroKenShare" class="text-2xl font-semibold tracking-tight text-stone-900 mt-2">$0</p>
                 <span class="text-[10px] text-stone-400 mt-1">依拆帳規則計算之總額</span>
             </div>
 
-            <!-- 指標 4：核心清算大看板 -->
             <div id="heroFinalFlowCard" class="bg-[#1E1B18] p-5 rounded-xl shadow-md flex flex-col justify-between transition-all border border-[#1E1B18]">
                 <span id="heroFinalTitle" class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">🚨 焦點二：最終支付方向</span>
                 <p id="heroFinalAction" class="text-xs font-medium mt-2 truncate">計算中...</p>
@@ -77,10 +70,8 @@
 
     <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
         
-        <!-- 左側與中間：數據輸入與明細流水帳 -->
         <div class="lg:col-span-2 space-y-8">
             
-            <!-- 區塊一：里程接力輸入 -->
             <div class="bg-white border border-stone-200 p-6 rounded-xl">
                 <div class="flex justify-between items-baseline mb-4">
                     <h2 class="text-xs font-semibold uppercase tracking-widest text-stone-400">01 / 里程接力記錄</h2>
@@ -101,14 +92,13 @@
                         <input type="number" id="endMileage" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="請輸入當前公里數">
                     </div>
                     <div class="flex items-end">
-                        <button onclick="addMileage()" class="w-full bg-stone-900 hover:bg-stone-800 text-white rounded-lg p-2 text-xs font-semibold tracking-wider transition shadow-sm">
+                        <button onclick="window.addMileage()" class="w-full bg-stone-900 hover:bg-stone-800 text-white rounded-lg p-2 text-xs font-semibold tracking-wider transition shadow-sm">
                             送出里程
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 區塊二：其他費用輸入 -->
             <div class="bg-white border border-stone-200 p-6 rounded-xl">
                 <h2 class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4">02 / 支出費用記錄</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -138,19 +128,18 @@
                         </select>
                     </div>
                     <div class="col-span-2 md:col-span-1 flex items-end">
-                        <button onclick="addExpense()" class="w-full bg-stone-900 hover:bg-stone-800 text-white rounded-lg p-2 text-xs font-semibold tracking-wider transition shadow-sm">
+                        <button onclick="window.addExpense()" class="w-full bg-stone-900 hover:bg-stone-800 text-white rounded-lg p-2 text-xs font-semibold tracking-wider transition shadow-sm">
                             送出費用
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 流水帳與明細表格 -->
             <div class="space-y-6">
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="text-xs font-semibold uppercase tracking-widest text-stone-400">📋 本月接力明細</h3>
-                        <button onclick="exportCurrentMonthCSV()" class="text-[11px] font-medium text-stone-400 hover:text-stone-900 underline underline-offset-4 transition">📥 匯出當月報表Excel</button>
+                        <button onclick="window.exportCurrentMonthCSV()" class="text-[11px] font-medium text-stone-400 hover:text-stone-900 underline underline-offset-4 transition">📥 匯出當月報表Excel</button>
                     </div>
                     <div class="bg-white border border-stone-200 rounded-xl overflow-hidden">
                         <div class="overflow-x-auto max-h-52">
@@ -179,7 +168,6 @@
                 </div>
             </div>
 
-            <!-- 歷史存摺 -->
             <div class="pt-2">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">📂 歷史已封存存摺</h3>
                 <div id="historyContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -189,7 +177,6 @@
             
         </div>
 
-        <!-- 右側：輔助性里程存摺與基礎設定 -->
         <div class="space-y-6">
             
             <div class="bg-white border border-stone-200 p-6 rounded-xl space-y-4">
@@ -218,44 +205,43 @@
                 </div>
             </div>
 
-            <!-- 系統基礎設定 -->
             <div class="bg-stone-50 border border-stone-200 p-4 rounded-xl space-y-4">
                 <h3 class="text-[10px] font-bold text-stone-400 tracking-widest uppercase">🔒 SYSTEM INFRASTRUCTURE</h3>
-                <button onclick="downloadSystemBackup()" class="w-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-medium py-2 px-3 border border-stone-200 rounded-lg transition text-center block">
+                <button onclick="window.downloadSystemBackup()" class="w-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-medium py-2 px-3 border border-stone-200 rounded-lg transition text-center block">
                     下載全系統雲端資料備份 (.json)
                 </button>
                 <div class="border-t border-stone-200/60 pt-3">
                     <label class="block text-[10px] text-stone-400 font-semibold tracking-wider uppercase mb-1">📤 強制上傳 JSON 覆蓋雲端：</label>
-                    <input type="file" id="importFile" onchange="importSystemBackup(event)" class="text-xs text-stone-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border file:border-stone-200 file:text-xs file:font-medium file:bg-white file:text-stone-700 hover:file:bg-stone-50 w-full">
+                    <input type="file" id="importFile" onchange="window.importSystemBackup(event)" class="text-xs text-stone-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border file:border-stone-200 file:text-xs file:font-medium file:bg-white file:text-stone-700 hover:file:bg-stone-50 w-full">
                 </div>
-                <button onclick="hardResetSystem()" class="w-full text-[10px] text-stone-400 hover:text-red-600 font-medium transition text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至最原始 0 狀態)</button>
+                <button onclick="window.hardResetSystem()" class="w-full text-[10px] text-stone-400 hover:text-red-600 font-medium transition text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至最原始 0 狀態)</button>
             </div>
 
         </div>
     </main>
 
-    <!-- 🧱 核心資料庫驅動腳本 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==========================================
-        // ⚠️ 請在下方貼上你申請到的 Firebase 帳號密鑰配置 ⚠️
+        // 🔐 已修正：對齊截圖中正確的 Firebase 金鑰配置 
         // ==========================================
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDCmmNy3jnq1T0nG9BWSd6AiolvNcopFGM",
+            authDomain: "track-car-spending.firebaseapp.com",
+            projectId: "track-car-spending",
+            storageBucket: "track-car-spending.firebasestorage.app",
+            messagingSenderId: "706270939073",
+            appId: "1:706270939073:web:7df65a4db4f02f6b0f8fa0",
+            measurementId: "G-2VZFZ00LJR"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const docRef = doc(db, "car_sharing_system", "v5_database_premium");
 
-        // 初始里程已設定為 0
+        // 🚗 初始里程已全面改為 0
         let systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
         let mileageList = []; let expenseList = []; let historyMonths = []; let currentMonthCalculatedData = {};
 
@@ -289,7 +275,7 @@
                     <td class="px-5 py-2.5 text-stone-400 font-light">${m.start}</td>
                     <td class="px-5 py-2.5 font-medium">${m.end}</td>
                     <td class="px-5 py-2.5 text-right font-semibold text-stone-900">${m.diff} km</td>
-                    <td class="px-5 py-2.5 text-center"><button onclick="deleteMileage(${index})" class="text-stone-400 hover:text-stone-900 text-[11px] underline">刪除</button></td>
+                    <td class="px-5 py-2.5 text-center"><button onclick="window.deleteMileage(${index})" class="text-stone-400 hover:text-stone-900 text-[11px] underline">刪除</button></td>
                 `;
                 timelineRows.appendChild(tr);
                 if (m.user === 'Terence') mTkm += m.diff;
@@ -339,7 +325,7 @@
                     <td class="px-5 py-2.5 font-semibold text-stone-800">$${e.amount.toLocaleString()}</td>
                     <td class="px-5 py-2.5 text-stone-500">${e.user}</td>
                     <td class="px-5 py-2.5 text-stone-400 font-light">${ruleText} <span class="text-stone-600 font-medium ml-1">(Ken: $${computedKenShare.toLocaleString()})</span></td>
-                    <td class="px-5 py-2.5 text-center"><button onclick="deleteExpense(${index})" class="text-stone-400 hover:text-stone-900 text-[11px] underline">刪除</button></td>
+                    <td class="px-5 py-2.5 text-center"><button onclick="window.deleteExpense(${index})" class="text-stone-400 hover:text-stone-900 text-[11px] underline">刪除</button></td>
                 `;
                 expenseRows.appendChild(tr);
 
@@ -413,8 +399,8 @@
                     <div class="flex justify-between items-center border-b border-stone-100 pb-1.5">
                         <span class="font-medium text-stone-900 text-xs">📅 ${month.label}</span>
                         <div class="flex gap-3">
-                            <button onclick="exportHistoricalCSV(${actualIdx})" class="text-[11px] text-stone-400 hover:text-stone-900 underline underline-offset-2">Excel</button>
-                            <button onclick="deleteHistoryMonth(${actualIdx})" class="text-[11px] text-stone-400 hover:text-red-600">刪除</button>
+                            <button onclick="window.exportHistoricalCSV(${actualIdx})" class="text-[11px] text-stone-400 hover:text-stone-900 underline underline-offset-2">Excel</button>
+                            <button onclick="window.deleteHistoryMonth(${actualIdx})" class="text-[11px] text-stone-400 hover:text-red-600">刪除</button>
                         </div>
                     </div>
                     <div class="text-[11px] text-stone-500 space-y-0.5 font-light">
@@ -431,7 +417,7 @@
             const end = parseInt(document.getElementById('endMileage').value);
             const lastEntry = mileageList[mileageList.length - 1];
             const start = lastEntry ? lastEntry.end : systemState.initialMileage;
-            if (!end && end !== 0) return alert('請輸入里程數！');
+            if (!end) return alert('請輸入里程數！');
             if (end <= start) return alert(`輸入里程必須大於最新里程 (${start})！`);
             mileageList.push({ user, start, end, diff: end - start });
             await updateCloud(); document.getElementById('endMileage').value = '';
@@ -498,9 +484,7 @@
         window.exportHistoricalCSV = function(index) { const month = historyMonths[index]; if (month) generateAndDownloadCSV(`歷史結算_${month.label}`, month.snapshot, month.label); };
         window.downloadSystemBackup = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ systemState, mileageList, expenseList, historyMonths })); const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `車費系統高級全備份.json`); dl.click(); };
         window.importSystemBackup = async function(event) { const file = event.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = async function(e) { try { const p = JSON.parse(e.target.result); if (p.systemState && confirm("確定覆蓋雲端？")) { systemState = p.systemState; mileageList = p.mileageList || []; expenseList = p.expenseList || []; historyMonths = p.historyMonths || []; await updateCloud(); } } catch(err){} }; r.readAsText(file); };
-        
-        // 重設功能已完全同步重構為 0 里程起點
-        window.hardResetSystem = async function() { if(confirm('確定工廠重設？這將清空所有資料並將初始里程歸 0！')) { systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 }; mileageList = []; expenseList = []; historyMonths = []; await updateCloud(); } };
+        window.hardResetSystem = async function() { if(confirm('確定工廠重設？')) { systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 }; mileageList = []; expenseList = []; historyMonths = []; await updateCloud(); } };
     </script>
 </body>
 </html>

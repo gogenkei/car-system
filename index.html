@@ -24,7 +24,7 @@
 
     <header class="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-stone-200/60 pb-4 gap-4">
         <div>
-            <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">FLEET & EXPENSE LOG V5</span>
+            <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">FLEET & EXPENSE LOG V5.2</span>
             <h1 class="text-xl font-light text-stone-900 tracking-tight mt-1">專屬車費里程對帳系統</h1>
         </div>
         <div class="flex items-center gap-6">
@@ -101,33 +101,49 @@
 
             <div class="bg-white border border-stone-200 p-6 rounded-xl">
                 <h2 class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4">02 / 支出費用記錄</h2>
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div class="col-span-2 md:col-span-1">
+                <div class="grid grid-cols-2 md:grid-cols-12 gap-4">
+                    
+                    <div id="expItemTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
                         <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">費用項目</label>
-                        <input type="text" id="expItem" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="項目名稱">
+                        <select id="expItemType" onchange="window.onExpenseItemChanged()" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors font-medium">
+                            <option value="⚡ 充電">⚡ 充電</option>
+                            <option value="🚗 車貸">🚗 車貸</option>
+                            <option value="🛡️ 保險">🛡️ 保險</option>
+                            <option value="其他">📝 其他雜費 (手動輸入)</option>
+                        </select>
                     </div>
-                    <div>
+
+                    <div id="customItemWrapper" class="col-span-2 md:col-span-2 hidden transition-all duration-300">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium text-amber-700">其他事由說明</label>
+                        <input type="text" id="expItemCustom" class="w-full bg-white border border-amber-300 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="請輸入項目名稱">
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2">
                         <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">金額 (元)</label>
                         <input type="number" id="expAmount" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="TWD">
                     </div>
-                    <div>
+
+                    <div class="col-span-1 md:col-span-2">
                         <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">代墊先付</label>
                         <select id="expPayUser" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors">
                             <option value="Terence">Terence</option>
                             <option value="Ken">Ken</option>
                         </select>
                     </div>
-                    <div class="col-span-2 md:col-span-1">
+
+                    <div id="expSplitTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
                         <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">分攤規則</label>
-                        <select id="expSplitType" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors">
-                            <option value="50_50">50 / 50 平分</option>
+                        <select id="expSplitType" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm text-stone-500 focus:outline-none transition-colors" disabled>
+                            <option value="month_mileage">📊 依當月里程比例分擔</option>
                             <option value="23_13">Terence 2/3 & Ken 1/3</option>
+                            <option value="50_50">50 / 50 平分</option>
                             <option value="Terence">全歸 Terence 負擔</option>
                             <option value="Ken">全歸 Ken 負擔</option>
-                            <option value="tire">⚙️ 輪胎耗損比例 (智慧歸零制)</option>
+                            <option value="tire">⚙️ 輪胎耗損比例 (全期制)</option>
                         </select>
                     </div>
-                    <div class="col-span-2 md:col-span-1 flex items-end">
+
+                    <div class="col-span-2 md:col-span-2 flex items-end">
                         <button onclick="window.addExpense()" class="w-full bg-stone-900 hover:bg-stone-800 text-white rounded-lg p-2 text-xs font-semibold tracking-wider transition shadow-sm">
                             送出費用
                         </button>
@@ -187,6 +203,10 @@
                     <div class="flex justify-between"><span>Terence：</span><span class="font-medium text-stone-900" id="monthTkm">0 km</span></div>
                     <div class="flex justify-between"><span>Ken：</span><span class="font-medium text-stone-900" id="monthKkm">0 km</span></div>
                     
+                    <div class="flex justify-between font-medium text-stone-700 bg-stone-200/30 px-2 py-0.5 rounded text-[10px]">
+                        <span>📊 當月里程 Ken 佔比：</span><span id="monthRatioKText">0.0%</span>
+                    </div>
+
                     <div class="font-semibold text-stone-800 border-b border-stone-200 pb-1 pt-2 mb-1 flex justify-between"><span>歷史至今全期大盤</span></div>
                     <div class="flex justify-between"><span>Terence 累計：</span><span class="text-stone-900"><span id="allTkm">0</span> km (<span id="allRatioT">0</span>%)</span></div>
                     <div class="flex justify-between"><span>Ken 累計：</span><span class="text-stone-900"><span id="allKkm">0</span> km (<span id="allRatioK">0</span>%)</span></div>
@@ -224,9 +244,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ==========================================
-        // 🔐 已修正：對齊截圖中正確的 Firebase 金鑰配置 
-        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDCmmNy3jnq1T0nG9BWSd6AiolvNcopFGM",
             authDomain: "track-car-spending.firebaseapp.com",
@@ -241,7 +258,7 @@
         const db = getFirestore(app);
         const docRef = doc(db, "car_sharing_system", "v5_database_premium");
 
-        // 🚗 初始里程已全面改為 0
+        // 🔢 核心修正：系統初始里程與狀態預設重設為 0
         let systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
         let mileageList = []; let expenseList = []; let historyMonths = []; let currentMonthCalculatedData = {};
 
@@ -260,6 +277,38 @@
         async function updateCloud() {
             try { await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths }); } catch (err) {}
         }
+
+        // 🧠 核心：處理項目選單變更與分攤規則「強制智慧綁定」
+        window.onExpenseItemChanged = function() {
+            const type = document.getElementById('expItemType').value;
+            const wrapper = document.getElementById('customItemWrapper');
+            const typeDiv = document.getElementById('expItemTypeDiv');
+            const splitDiv = document.getElementById('expSplitTypeDiv');
+            const splitSelect = document.getElementById('expSplitType');
+            
+            if (type === '⚡ 充電') {
+                wrapper.classList.add('hidden');
+                typeDiv.className = "col-span-2 md:col-span-3";
+                splitDiv.className = "col-span-2 md:col-span-3";
+                splitSelect.value = "month_mileage"; // 指定為：依當月里程比例
+                splitSelect.disabled = true; // 強制鎖定
+                splitSelect.className = "w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm text-stone-500 focus:outline-none transition-colors cursor-not-allowed";
+            } else if (type === '🚗 車貸' || type === '🛡️ 保險') {
+                wrapper.classList.add('hidden');
+                typeDiv.className = "col-span-2 md:col-span-3";
+                splitDiv.className = "col-span-2 md:col-span-3";
+                splitSelect.value = "23_13"; // 指定為：Terence 2/3 & Ken 1/3
+                splitSelect.disabled = true; // 強制鎖定
+                splitSelect.className = "w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm text-stone-500 focus:outline-none transition-colors cursor-not-allowed";
+            } else if (type === '開關解鎖' || type === '其他') {
+                // 解鎖其餘選項，供自由切換
+                wrapper.classList.remove('hidden');
+                typeDiv.className = "col-span-2 md:col-span-2";
+                splitDiv.className = "col-span-2 md:col-span-2";
+                splitSelect.disabled = false; // 解除鎖定
+                splitSelect.className = "w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors";
+            }
+        };
 
         function calculateAndRender() {
             const timelineRows = document.getElementById('timelineRows');
@@ -283,6 +332,10 @@
                 currentLatest = m.end;
             });
 
+            const monthTotalKm = mTkm + mKkm;
+            const monthRatioK = monthTotalKm > 0 ? (mKkm / monthTotalKm) : 0.5; 
+            document.getElementById('monthRatioKText').innerText = `${(monthRatioK * 100).toFixed(1)}%`;
+
             const allTkm = systemState.historyTkm + mTkm;
             const allKkm = systemState.historyKkm + mKkm;
             const totalAllKm = allTkm + allKkm;
@@ -294,7 +347,7 @@
             const tyreTotalKm = tyreTkm + tyreKkm;
             const tyreRatioK = tyreTotalKm > 0 ? (tyreKkm / tyreTotalKm) : 0;
 
-            document.getElementById('heroTotalKm').innerText = `${(mTkm + mKkm).toLocaleString()} km`;
+            document.getElementById('heroTotalKm').innerText = `${monthTotalKm.toLocaleString()} km`;
             document.getElementById('currentLatestMileage').innerText = currentLatest.toLocaleString();
             document.getElementById('monthTkm').innerText = `${mTkm} km`; document.getElementById('monthKkm').innerText = `${mKkm} km`;
             document.getElementById('allTkm').innerText = allTkm.toLocaleString(); document.getElementById('allKkm').innerText = allKkm.toLocaleString();
@@ -312,6 +365,7 @@
                 totalExp += e.amount;
 
                 if (e.splitType === '50_50') { ruleText = '50/50平分'; computedKenShare = e.amount * 0.5; } 
+                else if (e.splitType === 'month_mileage') { ruleText = `📊 當月里程比 (${(monthRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * monthRatioK; }
                 else if (e.splitType === '23_13') { ruleText = 'Terence 2/3 & Ken 1/3'; computedKenShare = e.amount * (1 / 3); } 
                 else if (e.splitType === 'Terence') { ruleText = '全歸 Terence'; computedKenShare = 0; } 
                 else if (e.splitType === 'Ken') { ruleText = '全歸 Ken'; computedKenShare = e.amount; } 
@@ -417,22 +471,38 @@
             const end = parseInt(document.getElementById('endMileage').value);
             const lastEntry = mileageList[mileageList.length - 1];
             const start = lastEntry ? lastEntry.end : systemState.initialMileage;
-            if (!end) return alert('請輸入里程數！');
+            if (isNaN(end)) return alert('請輸入里程數！');
             if (end <= start) return alert(`輸入里程必須大於最新里程 (${start})！`);
             mileageList.push({ user, start, end, diff: end - start });
             await updateCloud(); document.getElementById('endMileage').value = '';
         };
 
         window.addExpense = async function() {
-            const item = document.getElementById('expItem').value.trim();
+            const type = document.getElementById('expItemType').value;
+            let item = type;
+            
+            if (type === '其他') {
+                item = document.getElementById('expItemCustom').value.trim();
+                if (!item) return alert('請填寫其他雜費的事由說明！');
+            }
+            
             const amount = parseInt(document.getElementById('expAmount').value);
             const user = document.getElementById('expPayUser').value;
-            const splitType = document.getElementById('expSplitType').value;
-            if (!item) return alert('請填寫費用項目名稱！');
+            
+            // 重要：讀取拆帳規則（因 disabled 選項無法直接讀取值，此處改由原生項目邏輯對齊）
+            let splitType = document.getElementById('expSplitType').value;
+            if (type === '⚡ 充電') splitType = 'month_mileage';
+            if (type === '🚗 車貸' || type === '🛡️ 保險') splitType = '23_13';
+
             if (!amount || amount <= 0) return alert('請輸入正確的費用金額！');
+            
             expenseList.push({ item, amount, user, splitType });
             await updateCloud();
-            document.getElementById('expItem').value = ''; document.getElementById('expAmount').value = '';
+            
+            document.getElementById('expItemCustom').value = ''; 
+            document.getElementById('expAmount').value = '';
+            document.getElementById('expItemType').value = '⚡ 充電';
+            window.onExpenseItemChanged(); // 恢復預設充電鎖定狀態
         };
 
         window.deleteMileage = async function(idx) {
@@ -484,7 +554,10 @@
         window.exportHistoricalCSV = function(index) { const month = historyMonths[index]; if (month) generateAndDownloadCSV(`歷史結算_${month.label}`, month.snapshot, month.label); };
         window.downloadSystemBackup = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ systemState, mileageList, expenseList, historyMonths })); const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `車費系統高級全備份.json`); dl.click(); };
         window.importSystemBackup = async function(event) { const file = event.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = async function(e) { try { const p = JSON.parse(e.target.result); if (p.systemState && confirm("確定覆蓋雲端？")) { systemState = p.systemState; mileageList = p.mileageList || []; expenseList = p.expenseList || []; historyMonths = p.historyMonths || []; await updateCloud(); } } catch(err){} }; r.readAsText(file); };
-        window.hardResetSystem = async function() { if(confirm('確定工廠重設？')) { systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 }; mileageList = []; expenseList = []; historyMonths = []; await updateCloud(); } };
+        window.hardResetSystem = async function() { if(confirm('確定工廠重設？所有數據將回歸至0。')) { systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 }; mileageList = []; expenseList = []; historyMonths = []; await updateCloud(); } };
+        
+        // 🚀 初始化載入時手動執行一次，確保預設充電的鎖定狀態正常渲染
+        window.onExpenseItemChanged();
     </script>
 </body>
 </html>

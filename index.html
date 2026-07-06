@@ -263,7 +263,7 @@ const firebaseConfig = {
         });
 
         async function updateCloud() {
-            try { await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths }); } catch (err) {}
+            try { await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths }); } catch (err) { console.error("🚨 Firebase寫入大失敗：", err); }
         }
 
         function calculateAndRender() {

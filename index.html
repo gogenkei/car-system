@@ -3,388 +3,504 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>共乘與養車費用管理系統 Premium v7</title>
+    <title>車費里程雲端即時對帳系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 Jost 作為跨全平台完美的 Avenir 幾何人文風格替代字型 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: .5; transform: scale(1.1); }
+        body { 
+            /* 數字與歐文優先呼叫 Avenir Next，非 Apple 裝置則流暢接軌 Jost，中文部分則流暢回退至系統預設黑體 */
+            font-family: "Avenir Next", "Avenir", "Jost", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: #FAF7F2; 
         }
-        .pulse-glow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .pulse-glow { animation: blinker 2.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0.3; } }
     </style>
 </head>
-<body class="bg-stone-100 text-stone-800 font-sans min-h-screen pb-12">
+<body class="text-stone-900 min-h-screen p-4 md:p-12 antialiased">
 
-    <header class="bg-stone-900 text-stone-100 shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wider">🚗 養車共乘系統 Premium v5</h1>
-            <div id="cloudStatus" class="flex items-center gap-2 bg-stone-800 px-3 py-1.5 rounded-full border border-stone-700 transition-all">
-                <span class="w-2 h-2 rounded-full bg-amber-500 pulse-glow"></span>
-                <span class="text-stone-400 font-medium text-[10px]">雲端資料同步中...</span>
+    <!-- 頂部精緻導航與雲端狀態燈 -->
+    <header class="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-stone-200/60 pb-4 gap-4">
+        <div>
+            <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">FLEET & EXPENSE LOG V5</span>
+            <h1 class="text-xl font-light text-stone-900 tracking-tight mt-1">專屬車費里程對帳系統</h1>
+        </div>
+        <div class="flex items-center gap-6">
+            <div id="cloudStatus" class="flex items-center gap-2 text-xs font-medium text-stone-400">
+                <span class="w-2 h-2 rounded-full bg-stone-300 pulse-glow"></span>
+                <span>雲端同步初始化中...</span>
             </div>
+            <button onclick="closeCurrentMonth()" class="bg-[#1E1B18] hover:bg-stone-800 text-[#FDFCFB] font-medium text-xs px-4 py-2 rounded-lg transition-all tracking-wider shadow-sm">
+                結算本月
+            </button>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 mt-6 space-y-6">
+    <!-- 🏆 核心即時結算大看板 -->
+    <section class="max-w-6xl mx-auto mb-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- 指標 1 -->
+            <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+                <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">本月總里程</span>
+                <p id="heroTotalKm" class="text-2xl font-light tracking-tight text-stone-900 mt-2">0 km</p>
+                <span class="text-[10px] text-stone-400 mt-1">雙方接力行駛小計</span>
+            </div>
+
+            <!-- 指標 2 -->
+            <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+                <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">本月總日常支出</span>
+                <p id="heroTotalExpense" class="text-2xl font-light tracking-tight text-stone-900 mt-2">$0</p>
+                <span class="text-[10px] text-stone-400 mt-1">包含充電與常規費</span>
+            </div>
+
+            <!-- 指標 3 -->
+            <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+                <span class="text-[10px] font-bold tracking-widest text-stone-500 uppercase">💡 焦點一：Ken 應分擔</span>
+                <p id="heroKenShare" class="text-2xl font-semibold tracking-tight text-stone-900 mt-2">$0</p>
+                <span class="text-[10px] text-stone-400 mt-1">依拆帳規則計算之總額</span>
+            </div>
+
+            <!-- 指標 4：核心清算大看板 -->
+            <div id="heroFinalFlowCard" class="bg-[#1E1B18] p-5 rounded-xl shadow-md flex flex-col justify-between transition-all border border-[#1E1B18]">
+                <span id="heroFinalTitle" class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">🚨 焦點二：最終支付方向</span>
+                <p id="heroFinalAction" class="text-xs font-medium mt-2 truncate">計算中...</p>
+                <p id="heroFinalAmount" class="text-3xl font-bold tracking-tight">$0</p>
+            </div>
+
+        </div>
+    </section>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
-                <span class="text-xs font-medium text-stone-400 block mb-1">系統里程狀態</span>
-                <div class="space-y-1">
-                    <div class="text-xs text-stone-500 flex justify-between">
-                        <span>初始:</span> <span id="dashInitialMileage" class="font-mono font-semibold">-- km</span>
+        <!-- 左側與中間：數據輸入與明細流水帳 -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- 區塊一：里程接力輸入 -->
+            <div class="bg-white border border-stone-200 p-6 rounded-xl">
+                <div class="flex justify-between items-baseline mb-4">
+                    <h2 class="text-xs font-semibold uppercase tracking-widest text-stone-400">01 / 里程接力記錄</h2>
+                    <div class="text-[11px] text-stone-600 bg-stone-50 px-2.5 py-1 rounded border border-stone-100/80">
+                        目前最新里程：<span id="currentLatestMileage" class="font-bold tracking-tight text-stone-800">------</span> km
                     </div>
-                    <div class="text-xs text-stone-500 flex justify-between">
-                        <span>最新:</span> <span id="dashCurrentMileage" class="text-emerald-600 font-mono font-bold text-lg">-- km</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">駕駛成員</label>
+                        <select id="mileageUser" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors">
+                            <option value="Terence">Terence</option>
+                            <option value="Ken">Ken</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">結束里程 (直接看儀表板)</label>
+                        <input type="number" id="endMileage" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="請輸入當前公里數">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="addMileage()" class="w-full bg-stone-900 hover:bg-stone-800 text-white rounded-lg p-2 text-xs font-semibold tracking-wider transition shadow-sm">
+                            送出里程
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
-                <span class="text-xs font-medium text-stone-400 block mb-1">🧑‍✈️ 駕駛 T 歷史總里程</span>
-                <p id="dashTkm" class="text-xl font-bold text-stone-700 font-mono">-- km</p>
-                <span class="text-[10px] text-stone-400" id="dashTyreBaseT">輪胎基線: -- km</span>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
-                <span class="text-xs font-medium text-stone-400 block mb-1">👩‍✈️ 駕駛 K 歷史總里程</span>
-                <p id="dashKkm" class="text-xl font-bold text-stone-700 font-mono">-- km</p>
-                <span class="text-[10px] text-stone-400" id="dashTyreBaseK">輪胎基線: -- km</span>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
-                <span class="text-xs font-medium text-stone-400 block mb-1">💰 本月支出總計</span>
-                <p id="dashTotalExpense" class="text-2xl font-bold text-amber-600 font-mono">$0</p>
-                <span class="text-[10px] text-stone-400" id="dashExpenseCount">共 0 筆紀錄</span>
-            </div>
-            <div class="bg-stone-900 text-stone-100 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-                <span class="text-xs font-medium text-stone-400 block">帳務週期管理</span>
-                <button onclick="closeCurrentMonth()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs py-2 rounded-lg transition-colors shadow-sm mt-2">
-                    📦 進行本月結算歸檔
-                </button>
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-3">
-                <h3 class="text-sm font-bold text-stone-700 border-b border-stone-100 pb-2 flex items-center gap-2">🚗 新增里程紀錄</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-stone-500 mb-1">日期</label>
-                        <input type="date" id="mileageDate" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+            <!-- 區塊二：其他費用輸入 -->
+            <div class="bg-white border border-stone-200 p-6 rounded-xl">
+                <h2 class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4">02 / 支出費用記錄</h2>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">費用項目</label>
+                        <input type="text" id="expItem" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="項目名稱">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-stone-500 mb-1">當前里程數 (km)</label>
-                        <input type="number" id="mileageValue" placeholder="請輸入里程" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">金額 (元)</label>
+                        <input type="number" id="expAmount" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="TWD">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">代墊先付</label>
+                        <select id="expPayUser" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors">
+                            <option value="Terence">Terence</option>
+                            <option value="Ken">Ken</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">分攤規則</label>
+                        <select id="expSplitType" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors">
+                            <option value="50_50">50 / 50 平分</option>
+                            <option value="23_13">Terence 2/3 & Ken 1/3</option>
+                            <option value="Terence">全歸 Terence 負擔</option>
+                            <option value="Ken">全歸 Ken 負擔</option>
+                            <option value="tire">⚙️ 輪胎耗損比例 (智慧歸零制)</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2 md:col-span-1 flex items-end">
+                        <button onclick="addExpense()" class="w-full bg-stone-900 hover:bg-stone-800 text-white rounded-lg p-2 text-xs font-semibold tracking-wider transition shadow-sm">
+                            送出費用
+                        </button>
                     </div>
                 </div>
+            </div>
+
+            <!-- 流水帳與明細表格 -->
+            <div class="space-y-6">
                 <div>
-                    <label class="block text-xs font-medium text-stone-500 mb-1">備註 / 駕駛員事由</label>
-                    <input type="text" id="mileageNote" placeholder="例如：Terence (出差)" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-semibold uppercase tracking-widest text-stone-400">📋 本月接力明細</h3>
+                        <button onclick="exportCurrentMonthCSV()" class="text-[11px] font-medium text-stone-400 hover:text-stone-900 underline underline-offset-4 transition">📥 匯出當月報表Excel</button>
+                    </div>
+                    <div class="bg-white border border-stone-200 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto max-h-52">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="bg-stone-50 text-stone-400 border-b border-stone-100 font-medium uppercase tracking-wider"><th class="px-5 py-2.5">成員</th><th class="px-5 py-2.5">起始里程</th><th class="px-5 py-2.5">結束里程</th><th class="px-5 py-2.5 text-right">小計</th><th class="px-5 py-2.5 text-center">操作</th></tr>
+                                </thead>
+                                <tbody id="timelineRows" class="divide-y divide-stone-100 text-stone-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="addNewMileage()" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-medium text-sm py-2 rounded-lg transition-colors">
-                    登錄里程紀錄
-                </button>
-            </div>
 
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-3">
-                <h3 class="text-sm font-bold text-stone-700 border-b border-stone-100 pb-2 flex items-center gap-2">💰 新增費用支出</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-stone-500 mb-1">日期</label>
-                        <input type="date" id="expenseDate" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-stone-500 mb-1">支出金額 ($)</label>
-                        <input type="number" id="expenseValue" placeholder="請輸入金額" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
-                    </div>
-                </div>
                 <div>
-                    <label class="block text-xs font-medium text-stone-500 mb-1">費用項目摘要說明</label>
-                    <input type="text" id="expenseNote" placeholder="例如：中油加油、定期保養" class="w-full bg-stone-50 border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-stone-400">
+                    <h3 class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">💸 本月日常費用支出</h3>
+                    <div class="bg-white border border-stone-200 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto max-h-52">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="bg-stone-50 text-stone-400 border-b border-stone-100 font-medium uppercase tracking-wider"><th class="px-5 py-2.5">項目</th><th class="px-5 py-2.5">總額</th><th class="px-5 py-2.5">代墊者</th><th class="px-5 py-2.5">拆帳模式說明</th><th class="px-5 py-2.5 text-center">操作</th></tr>
+                                </thead>
+                                <tbody id="expenseRows" class="divide-y divide-stone-100 text-stone-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="addNewExpense()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm py-2 rounded-lg transition-colors">
-                    登錄費用支出
+            </div>
+
+            <!-- 歷史存摺 -->
+            <div class="pt-2">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">📂 歷史已封存存摺</h3>
+                <div id="historyContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <p class="text-xs text-stone-400 italic py-2 col-span-2">尚無歷史封存數據。</p>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- 右側：輔助性里程存摺與基礎設定 -->
+        <div class="space-y-6">
+            
+            <div class="bg-white border border-stone-200 p-6 rounded-xl space-y-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">📈 里程大盤與耗損細節</h2>
+                
+                <div class="text-xs text-stone-600 space-y-2.5 bg-stone-50 p-4 rounded-lg border border-stone-100 font-light">
+                    <div class="font-semibold text-stone-800 border-b border-stone-200 pb-1 mb-1 flex justify-between"><span>本月個別開車量</span></div>
+                    <div class="flex justify-between"><span>Terence：</span><span class="font-medium text-stone-900" id="monthTkm">0 km</span></div>
+                    <div class="flex justify-between"><span>Ken：</span><span class="font-medium text-stone-900" id="monthKkm">0 km</span></div>
+                    
+                    <div class="font-semibold text-stone-800 border-b border-stone-200 pb-1 pt-2 mb-1 flex justify-between"><span>歷史至今全期大盤</span></div>
+                    <div class="flex justify-between"><span>Terence 累計：</span><span class="text-stone-900"><span id="allTkm">0</span> km (<span id="allRatioT">0</span>%)</span></div>
+                    <div class="flex justify-between"><span>Ken 累計：</span><span class="text-stone-900"><span id="allKkm">0</span> km (<span id="allRatioK">0</span>%)</span></div>
+
+                    <div class="font-semibold text-stone-800 border-b border-stone-200 pb-1 pt-2 mb-1 flex justify-between"><span>⚙️ 當前輪胎獨立壽命區間</span></div>
+                    <div class="flex justify-between"><span>Terence 本胎：</span><span class="text-stone-900"><span id="tyreTkm">0</span> km</span></div>
+                    <div class="flex justify-between"><span>Ken 本胎：</span><span class="text-stone-900"><span id="tyreKkm">0</span> km</span></div>
+                    <div class="flex justify-between font-medium text-stone-900 bg-stone-200/60 px-2 py-1 rounded text-[10px] mt-1">
+                        <span>💡 當前胎磨 Ken 應拆帳佔比：</span><span id="tyreRatioKText">0.0%</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-stone-100 pt-3 space-y-1.5 text-xs font-light text-stone-500">
+                    <div class="flex justify-between"><span>Terence 當月實際代墊總額:</span><span id="outT" class="font-medium text-stone-800">$0</span></div>
+                    <div class="flex justify-between"><span>Ken 當月實際代墊總額:</span><span id="outK" class="font-medium text-stone-800">$0</span></div>
+                </div>
+            </div>
+
+            <!-- 系統基礎設定 -->
+            <div class="bg-stone-50 border border-stone-200 p-4 rounded-xl space-y-4">
+                <h3 class="text-[10px] font-bold text-stone-400 tracking-widest uppercase">🔒 SYSTEM INFRASTRUCTURE</h3>
+                <button onclick="downloadSystemBackup()" class="w-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-medium py-2 px-3 border border-stone-200 rounded-lg transition text-center block">
+                    下載全系統雲端資料備份 (.json)
                 </button>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-                <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center">
-                    <h3 class="font-bold text-stone-700 text-xs tracking-wider uppercase">📋 本月里程更動明細</h3>
+                <div class="border-t border-stone-200/60 pt-3">
+                    <label class="block text-[10px] text-stone-400 font-semibold tracking-wider uppercase mb-1">📤 強制上傳 JSON 覆蓋雲端：</label>
+                    <input type="file" id="importFile" onchange="importSystemBackup(event)" class="text-xs text-stone-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border file:border-stone-200 file:text-xs file:font-medium file:bg-white file:text-stone-700 hover:file:bg-stone-50 w-full">
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-stone-100/50 text-stone-500 text-xs font-semibold border-b border-stone-200">
-                                <th class="p-3">日期</th>
-                                <th class="p-3">里程數</th>
-                                <th class="p-3">摘要備註</th>
-                                <th class="p-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mileageRows" class="text-sm divide-y divide-stone-100">
-                            <tr><td colspan="4" class="p-4 text-center text-stone-400 italic">無里程資料</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <button onclick="hardResetSystem()" class="w-full text-[10px] text-stone-400 hover:text-red-600 font-medium transition text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至最原始 0 狀態)</button>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-                <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center">
-                    <h3 class="font-bold text-stone-700 text-xs tracking-wider uppercase">📋 本月養車支出明細</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-stone-100/50 text-stone-500 text-xs font-semibold border-b border-stone-200">
-                                <th class="p-3">日期</th>
-                                <th class="p-3">金額</th>
-                                <th class="p-3">項目說明</th>
-                                <th class="p-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenseRows" class="text-sm divide-y divide-stone-100">
-                            <tr><td colspan="4" class="p-4 text-center text-stone-400 italic">無費用資料</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl border border-stone-200 text-xs text-stone-500 flex flex-wrap gap-4 justify-between items-center">
-            <div>
-                <span>🔧 系統核心參數微調：</span>
-                <label class="ml-2">初始里程: <input type="number" id="cfgInitial" class="w-20 border rounded px-1" onchange="updateSystemConfig()"></label>
-                <label class="ml-2">T輪胎基線: <input type="number" id="cfgTyreT" class="w-20 border rounded px-1" onchange="updateSystemConfig()"></label>
-                <label class="ml-2">K輪胎基線: <input type="number" id="cfgTyreK" class="w-20 border rounded px-1" onchange="updateSystemConfig()"></label>
-            </div>
-            <span class="text-[10px] text-stone-400 font-mono">Premium Engine v5.1.0</span>
         </div>
     </main>
 
+    <!-- 🧱 核心資料庫驅動腳本 -->
     <script type="module">
-        console.log("📢 報數！最愛的舊版 Layout 與輸入方式全面復活！");
-
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 1. Firebase 連線金鑰
+        // ==========================================
+        // ⚠️ 請在下方貼上你申請到的 Firebase 帳號密鑰配置 ⚠️
+        // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyDCmmNy3jnq1T0nG9BWSd6AIolvNcopFGM",
-            authDomain: "track-car-spending.firebaseapp.com",
-            projectId: "track-car-spending",
-            storageBucket: "track-car-spending.firebasestorage.app",
-            messagingSenderId: "706270939073",
-            appId: "1:706270939073:web:7df65a4db4f02f6b0f8fa0",
-            measurementId: "G-2VZFZ00LJR"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const docRef = doc(db, "car_sharing_system", "v5_database_premium");
 
-        // 2. 本地核心變數定義
-        let systemState = { initialMileage: 85820, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
-        let mileageList = []; 
-        let expenseList = []; 
-        let historyMonths = [];
+        // 初始里程已設定為 0
+        let systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
+        let mileageList = []; let expenseList = []; let historyMonths = []; let currentMonthCalculatedData = {};
 
-        // 自動將輸入日期預設為今天
-        const todayStr = new Date().toISOString().slice(0, 10);
-        document.getElementById('mileageDate').value = todayStr;
-        document.getElementById('expenseDate').value = todayStr;
-
-        // 3. 監聽雲端資料庫
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const cloudData = docSnap.data();
-                systemState = cloudData.systemState || { initialMileage: 85820, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
-                mileageList = cloudData.mileageList || [];
-                expenseList = cloudData.expenseList || [];
-                historyMonths = cloudData.historyMonths || [];
-                
-                document.getElementById('cloudStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-600 pulse-glow"></span><span class="text-stone-200 font-medium text-[10px]">雲端連線正常</span>';
-            } else {
-                updateCloud();
-            }
+                systemState = cloudData.systemState || { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
+                mileageList = cloudData.mileageList || []; expenseList = cloudData.expenseList || []; historyMonths = cloudData.historyMonths || [];
+                document.getElementById('cloudStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-600 pulse-glow"></span><span class="text-stone-600 font-medium tracking-wider text-[10px]">LIVE SYNCED</span>`;
+            } else { updateCloud(); }
             calculateAndRender();
         }, (error) => {
-            console.error("Firebase 連線故障:", error);
-            document.getElementById('cloudStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span class="text-rose-400 font-medium text-[10px]">權限到期鎖死</span>';
+            document.getElementById('cloudStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span class="text-rose-600 font-medium text-[10px]">ERROR</span>`;
         });
 
-        // 4. 同步資料至雲端
         async function updateCloud() {
-            try {
-                await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths });
-            } catch (err) {
-                console.error("🚨 雲端寫入失敗:", err);
-                alert("❌ 同步失敗！請至 Firebase 查看規則是否過期。");
-            }
+            try { await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths }); } catch (err) {}
         }
 
-        // 5. 畫面重新渲染與計算法則 (完美對應舊版雙表架構)
         function calculateAndRender() {
-            // 更新參數微調輸入框數值
-            document.getElementById('cfgInitial').value = systemState.initialMileage;
-            document.getElementById('cfgTyreT').value = systemState.tyreBaseTkm || 0;
-            document.getElementById('cfgTyreK').value = systemState.tyreBaseKkm || 0;
+            const timelineRows = document.getElementById('timelineRows');
+            timelineRows.innerHTML = '';
+            let currentLatest = systemState.initialMileage;
+            let mTkm = 0, mKkm = 0;
 
-            // 數據卡片渲染
-            document.getElementById('dashInitialMileage').innerText = `${systemState.initialMileage.toLocaleString()} km`;
-            
-            let currentLatestMileage = systemState.initialMileage;
-            if (mileageList.length > 0) {
-                const maxMileage = Math.max(...mileageList.map(m => Number(m.value)));
-                if (maxMileage > currentLatestMileage) currentLatestMileage = maxMileage;
-            }
-            document.getElementById('dashCurrentMileage').innerText = `${currentLatestMileage.toLocaleString()} km`;
+            mileageList.forEach((m, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-stone-50/60 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-5 py-2.5 font-medium text-stone-900">${m.user}</td>
+                    <td class="px-5 py-2.5 text-stone-400 font-light">${m.start}</td>
+                    <td class="px-5 py-2.5 font-medium">${m.end}</td>
+                    <td class="px-5 py-2.5 text-right font-semibold text-stone-900">${m.diff} km</td>
+                    <td class="px-5 py-2.5 text-center"><button onclick="deleteMileage(${index})" class="text-stone-400 hover:text-stone-900 text-[11px] underline">刪除</button></td>
+                `;
+                timelineRows.appendChild(tr);
+                if (m.user === 'Terence') mTkm += m.diff;
+                if (m.user === 'Ken') mKkm += m.diff;
+                currentLatest = m.end;
+            });
 
-            // 統計總費用
-            const totalExp = expenseList.reduce((sum, item) => sum + Number(item.value), 0);
-            document.getElementById('dashTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
-            document.getElementById('dashExpenseCount').innerText = `共 ${expenseList.length} 筆紀錄`;
+            const allTkm = systemState.historyTkm + mTkm;
+            const allKkm = systemState.historyKkm + mKkm;
+            const totalAllKm = allTkm + allKkm;
+            const allRatioT = totalAllKm > 0 ? (allTkm / totalAllKm) : 0;
+            const allRatioK = totalAllKm > 0 ? (allKkm / totalAllKm) : 0;
 
-            // 雙駕駛總里程與輪胎顯示
-            document.getElementById('dashTkm').innerText = `${(systemState.historyTkm || 0).toLocaleString()} km`;
-            document.getElementById('dashKkm').innerText = `${(systemState.historyKkm || 0).toLocaleString()} km`;
-            document.getElementById('dashTyreBaseT').innerText = `輪胎基線: ${(systemState.tyreBaseTkm || 0).toLocaleString()} km`;
-            document.getElementById('dashTyreBaseK').innerText = `輪胎基線: ${(systemState.tyreBaseKkm || 0).toLocaleString()} km`;
+            const baseT = systemState.tyreBaseTkm || 0; const baseK = systemState.tyreBaseKkm || 0;
+            const tyreTkm = Math.max(0, allTkm - baseT); const tyreKkm = Math.max(0, allKkm - baseK);
+            const tyreTotalKm = tyreTkm + tyreKkm;
+            const tyreRatioK = tyreTotalKm > 0 ? (tyreKkm / tyreTotalKm) : 0;
 
-            // --- 渲染左側：里程明細表格 ---
-            const mileageRows = document.getElementById('mileageRows');
-            mileageRows.innerHTML = '';
-            // 由新到舊排序
-            const sortedMileage = [...mileageList].sort((a, b) => new Date(b.date) - new Date(a.date));
-            if (sortedMileage.length === 0) {
-                mileageRows.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-stone-400 italic">本月尚無里程紀錄</td></tr>`;
-            } else {
-                sortedMileage.forEach((item) => {
-                    // 尋找它在原始陣列中的真實 index 以便刪除
-                    const origIdx = mileageList.findIndex(m => m.date === item.date && m.value === item.value && m.note === item.note);
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-stone-50/80 transition-colors';
-                    tr.innerHTML = `
-                        <td class="p-3 text-stone-600 font-mono">${item.date}</td>
-                        <td class="p-3 font-semibold text-stone-700">${Number(item.value).toLocaleString()} km</td>
-                        <td class="p-3 text-stone-500">${item.note || '-'}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteRecord('mileage', ${origIdx})" class="text-xs text-rose-500 hover:text-rose-700 hover:underline">刪除</button>
-                        </td>
-                    `;
-                    mileageRows.appendChild(tr);
-                });
-            }
+            document.getElementById('heroTotalKm').innerText = `${(mTkm + mKkm).toLocaleString()} km`;
+            document.getElementById('currentLatestMileage').innerText = currentLatest.toLocaleString();
+            document.getElementById('monthTkm').innerText = `${mTkm} km`; document.getElementById('monthKkm').innerText = `${mKkm} km`;
+            document.getElementById('allTkm').innerText = allTkm.toLocaleString(); document.getElementById('allKkm').innerText = allKkm.toLocaleString();
+            document.getElementById('allRatioT').innerText = (allRatioT * 100).toFixed(1); document.getElementById('allRatioK').innerText = (allRatioK * 100).toFixed(1);
+            document.getElementById('tyreTkm').innerText = tyreTkm.toLocaleString(); document.getElementById('tyreKkm').innerText = tyreKkm.toLocaleString();
+            document.getElementById('tyreRatioKText').innerText = `${(tyreRatioK * 100).toFixed(1)}%`;
 
-            // --- 渲染右側：費用明細表格 ---
             const expenseRows = document.getElementById('expenseRows');
             expenseRows.innerHTML = '';
-            const sortedExpense = [...expenseList].sort((a, b) => new Date(b.date) - new Date(a.date));
-            if (sortedExpense.length === 0) {
-                expenseRows.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-stone-400 italic">本月尚無費用明細</td></tr>`;
+            let tPaid = 0, kPaid = 0, totalExp = 0, kResponsibility = 0;
+            let detailedExpensesWithShare = [];
+
+            expenseList.forEach((e, index) => {
+                let ruleText = ''; let computedKenShare = 0;
+                totalExp += e.amount;
+
+                if (e.splitType === '50_50') { ruleText = '50/50平分'; computedKenShare = e.amount * 0.5; } 
+                else if (e.splitType === '23_13') { ruleText = 'Terence 2/3 & Ken 1/3'; computedKenShare = e.amount * (1 / 3); } 
+                else if (e.splitType === 'Terence') { ruleText = '全歸 Terence'; computedKenShare = 0; } 
+                else if (e.splitType === 'Ken') { ruleText = '全歸 Ken'; computedKenShare = e.amount; } 
+                else if (e.splitType === 'tire') { ruleText = `⚙️ 輪胎比例 (${(tyreRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * tyreRatioK; }
+
+                computedKenShare = Math.round(computedKenShare);
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-stone-50/60 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-5 py-2.5 font-medium text-stone-900">${e.item}</td>
+                    <td class="px-5 py-2.5 font-semibold text-stone-800">$${e.amount.toLocaleString()}</td>
+                    <td class="px-5 py-2.5 text-stone-500">${e.user}</td>
+                    <td class="px-5 py-2.5 text-stone-400 font-light">${ruleText} <span class="text-stone-600 font-medium ml-1">(Ken: $${computedKenShare.toLocaleString()})</span></td>
+                    <td class="px-5 py-2.5 text-center"><button onclick="deleteExpense(${index})" class="text-stone-400 hover:text-stone-900 text-[11px] underline">刪除</button></td>
+                `;
+                expenseRows.appendChild(tr);
+
+                if (e.user === 'Terence') tPaid += e.amount;
+                if (e.user === 'Ken') kPaid += e.amount;
+                kResponsibility += computedKenShare;
+                detailedExpensesWithShare.push({ item: e.item, amount: e.amount, payer: e.user, rule: ruleText, kenShare: computedKenShare });
+            });
+
+            document.getElementById('heroTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
+            document.getElementById('heroKenShare').innerText = `$${Math.round(kResponsibility).toLocaleString()}`;
+            document.getElementById('outT').innerText = `$${tPaid.toLocaleString()}`;
+            document.getElementById('outK').innerText = `$${kPaid.toLocaleString()}`;
+
+            const netFlow = kResponsibility - kPaid;
+            const heroCard = document.getElementById('heroFinalFlowCard');
+            const heroTitle = document.getElementById('heroFinalTitle');
+            const heroAction = document.getElementById('heroFinalAction');
+            const heroAmount = document.getElementById('heroFinalAmount');
+
+            let finalActionStr = "";
+            
+            if (Math.round(netFlow) === 0) {
+                heroCard.className = "bg-stone-100 p-5 rounded-xl border border-stone-200 flex flex-col justify-between transition-all";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-stone-400 uppercase";
+                heroAction.className = "text-xs font-medium text-stone-500 mt-2 truncate";
+                heroAmount.className = "text-3xl font-bold tracking-tight text-stone-400 mt-1";
+                
+                heroAction.innerText = "雙方帳目平衡 BALANCE"; 
+                heroAmount.innerText = "$0"; 
+                finalActionStr = "雙方帳目平衡";
+            } else if (netFlow > 0) {
+                heroCard.className = "bg-[#1E1B18] p-5 rounded-xl shadow-md flex flex-col justify-between transition-all border border-[#1E1B18]";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-stone-400 uppercase";
+                heroAction.className = "text-xs font-medium text-stone-300 mt-2 truncate";
+                heroAmount.className = "text-3xl font-bold tracking-tight text-[#FDFCFB] mt-1";
+                
+                heroAction.innerText = "🙋‍♂️ Ken 應匯款給 Terence";
+                heroAmount.innerText = `$${Math.round(netFlow).toLocaleString()}`;
+                finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
             } else {
-                sortedExpense.forEach((item) => {
-                    const origIdx = expenseList.findIndex(e => e.date === item.date && e.value === item.value && e.note === item.note);
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-stone-50/80 transition-colors';
-                    tr.innerHTML = `
-                        <td class="p-3 text-stone-600 font-mono">${item.date}</td>
-                        <td class="p-3 font-semibold text-amber-700">$ ${Number(item.value).toLocaleString()}</td>
-                        <td class="p-3 text-stone-500">${item.note || '-'}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteRecord('expense', ${origIdx})" class="text-xs text-rose-500 hover:text-rose-700 hover:underline">刪除</button>
-                        </td>
-                    `;
-                    expenseRows.appendChild(tr);
-                });
-            }
-        }
-
-        // 6. 獨立功能控制項
-        function addNewMileage() {
-            const date = document.getElementById('mileageDate').value;
-            const value = Number(document.getElementById('mileageValue').value);
-            const note = document.getElementById('mileageNote').value.trim();
-
-            if (!date || !value) { alert("請填寫正確的里程日期與數值！"); return; }
-            mileageList.push({ date, value, note });
-            updateCloud();
-            document.getElementById('mileageValue').value = '';
-            document.getElementById('mileageNote').value = '';
-        }
-
-        function addNewExpense() {
-            const date = document.getElementById('expenseDate').value;
-            const value = Number(document.getElementById('expenseValue').value);
-            const note = document.getElementById('expenseNote').value.trim();
-
-            if (!date || !value) { alert("請填寫正確的費用日期與金額！"); return; }
-            expenseList.push({ date, value, note });
-            updateCloud();
-            document.getElementById('expenseValue').value = '';
-            document.getElementById('expenseNote').value = '';
-        }
-
-        function deleteRecord(type, index) {
-            if (!confirm("確定要刪除這筆紀錄嗎？")) return;
-            if (type === 'mileage') {
-                mileageList.splice(index, 1);
-            } else {
-                expenseList.splice(index, 1);
-            }
-            updateCloud();
-        }
-
-        // 底部的手動參數更新
-        function updateSystemConfig() {
-            systemState.initialMileage = Number(document.getElementById('cfgInitial').value) || 85820;
-            systemState.tyreBaseTkm = Number(document.getElementById('cfgTyreT').value) || 0;
-            systemState.tyreBaseKkm = Number(document.getElementById('cfgTyreK').value) || 0;
-            updateCloud();
-        }
-
-        // 7. 本月結算歸檔核心 (徹底解決 missing 故障)
-        function closeCurrentMonth() {
-            if (mileageList.length === 0 && expenseList.length === 0) {
-                alert("目前本月名冊空空如也，不需結算歸檔喔！");
-                return;
+                heroCard.className = "bg-stone-200 p-5 rounded-xl flex flex-col justify-between transition-all border border-stone-300";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-stone-600 uppercase";
+                heroAction.className = "text-xs font-medium text-stone-800 mt-2 truncate";
+                heroAmount.className = "text-3xl font-bold tracking-tight text-stone-900 mt-1";
+                
+                heroAction.innerText = "🙋‍♂️ Terence 應匯款給 Ken";
+                heroAmount.innerText = `$${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+                finalActionStr = `Terence 應匯款給 Ken $${Math.round(Math.abs(netFlow)).toLocaleString()}`;
             }
 
-            if (!confirm("確定要進行本月結算嗎？\n結算後，當月的流水帳將全部打包存入歷史紀錄，並清空主畫面。")) return;
-
-            const archiveData = {
-                archiveId: new Date().toISOString().slice(0, 7), // 產生如 "2026-07"
-                mileageSnapshot: [...mileageList],
-                expenseSnapshot: [...expenseList],
-                savedState: { ...systemState }
+            currentMonthCalculatedData = {
+                mTkm, mKkm, allTkm, allKkm, allRatioK, tyreTkm, tyreKkm, tyreRatioK, baseT, baseK,
+                tPaid, kPaid, kResponsibility, netFlow, finalActionStr,
+                mileages: JSON.parse(JSON.stringify(mileageList)), expenses: detailedExpensesWithShare
             };
-
-            historyMonths.push(archiveData);
-
-            // 如果結算時有最新里程，將其滾動覆蓋為下個月的初始里程
-            if (mileageList.length > 0) {
-                const maxMileage = Math.max(...mileageList.map(m => Number(m.value)));
-                if (maxMileage > systemState.initialMileage) {
-                    systemState.initialMileage = maxMileage;
-                }
-            }
-
-            // 清空緩衝
-            mileageList = [];
-            expenseList = [];
-
-            updateCloud();
-            alert("🎉 本月結算成功！資料已完整歸檔封箱。");
+            renderHistoryMonths();
         }
 
-        // ==========================================
-        // 🌐 終極救星：將所有 HTML 所需按鈕功能發射到 Window 全域
-        // ==========================================
-        window.addNewMileage = addNewMileage;
-        window.addNewExpense = addNewExpense;
-        window.deleteRecord = deleteRecord;
-        window.updateSystemConfig = updateSystemConfig;
-        window.closeCurrentMonth = closeCurrentMonth;
+        function renderHistoryMonths() {
+            const container = document.getElementById('historyContainer');
+            if (historyMonths.length === 0) {
+                container.innerHTML = '<p class="text-xs text-stone-400 italic py-2 col-span-2">尚無歷史封存數據。</p>'; return;
+            }
+            container.innerHTML = '';
+            historyMonths.slice().reverse().forEach((month, revIdx) => {
+                const actualIdx = historyMonths.length - 1 - revIdx;
+                const card = document.createElement('div');
+                card.className = "bg-white border border-stone-200 p-4 rounded-xl space-y-2 hover:border-stone-400 transition-colors";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-stone-100 pb-1.5">
+                        <span class="font-medium text-stone-900 text-xs">📅 ${month.label}</span>
+                        <div class="flex gap-3">
+                            <button onclick="exportHistoricalCSV(${actualIdx})" class="text-[11px] text-stone-400 hover:text-stone-900 underline underline-offset-2">Excel</button>
+                            <button onclick="deleteHistoryMonth(${actualIdx})" class="text-[11px] text-stone-400 hover:text-red-600">刪除</button>
+                        </div>
+                    </div>
+                    <div class="text-[11px] text-stone-500 space-y-0.5 font-light">
+                        <div>當月里程: T:${month.snapshot.mTkm}km / K:${month.snapshot.mKkm}km</div>
+                        <div class="text-stone-800 font-medium">結果：${month.snapshot.finalActionStr}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
+        window.addMileage = async function() {
+            const user = document.getElementById('mileageUser').value;
+            const end = parseInt(document.getElementById('endMileage').value);
+            const lastEntry = mileageList[mileageList.length - 1];
+            const start = lastEntry ? lastEntry.end : systemState.initialMileage;
+            if (!end && end !== 0) return alert('請輸入里程數！');
+            if (end <= start) return alert(`輸入里程必須大於最新里程 (${start})！`);
+            mileageList.push({ user, start, end, diff: end - start });
+            await updateCloud(); document.getElementById('endMileage').value = '';
+        };
+
+        window.addExpense = async function() {
+            const item = document.getElementById('expItem').value.trim();
+            const amount = parseInt(document.getElementById('expAmount').value);
+            const user = document.getElementById('expPayUser').value;
+            const splitType = document.getElementById('expSplitType').value;
+            if (!item) return alert('請填寫費用項目名稱！');
+            if (!amount || amount <= 0) return alert('請輸入正確的費用金額！');
+            expenseList.push({ item, amount, user, splitType });
+            await updateCloud();
+            document.getElementById('expItem').value = ''; document.getElementById('expAmount').value = '';
+        };
+
+        window.deleteMileage = async function(idx) {
+            if(confirm('確定刪除此里程？系統將自動重構接力鏈並同步。')) {
+                mileageList.splice(idx, 1);
+                let current = systemState.initialMileage;
+                mileageList.forEach(m => { m.start = current; m.end = current + m.diff; current = m.end; });
+                await updateCloud();
+            }
+        };
+        window.deleteExpense = async function(idx) { expenseList.splice(idx, 1); await updateCloud(); };
+
+        window.closeCurrentMonth = async function() {
+            if (mileageList.length === 0 && expenseList.length === 0) return alert('當前月份尚無資料！');
+            const currentLatest = mileageList.length > 0 ? mileageList[mileageList.length - 1].end : systemState.initialMileage;
+            const monthLabel = prompt("請輸入本次結算的月份名稱標籤：", `${new Date().getFullYear()}年${new Date().getMonth() + 1}月`);
+            if (!monthLabel || monthLabel.trim() === "") return;
+
+            if (confirm(`確定要結算並永久將帳目推往雲端歷史區嗎？`)) {
+                const hasTyreExpense = expenseList.some(e => e.splitType === 'tire');
+                historyMonths.push({ label: monthLabel.trim(), snapshot: JSON.parse(JSON.stringify(currentMonthCalculatedData)), timestamp: Date.now() });
+                systemState.historyTkm += currentMonthCalculatedData.mTkm;
+                systemState.historyKkm += currentMonthCalculatedData.mKkm;
+                systemState.initialMileage = currentLatest;
+                if (hasTyreExpense) { systemState.tyreBaseTkm = systemState.historyTkm; systemState.tyreBaseKkm = systemState.historyKkm; }
+                mileageList = []; expenseList = []; await updateCloud();
+                alert(`🎉 【${monthLabel}】已成功結算安全封存。`);
+            }
+        };
+
+        window.deleteHistoryMonth = async function(index) {
+            if (confirm(`確定要刪除歷史封存備份嗎？`)) { historyMonths.splice(index, 1); await updateCloud(); }
+        };
+
+        function generateAndDownloadCSV(filename, dataSnapshot, titleLabel) {
+            let csvContent = "\uFEFF=== " + titleLabel + " 車費與里程對帳報表 ===\n\n--- 里程與大盤存摺摘要 ---\n項目,Terence,Ken,總計\n";
+            csvContent += `本月開車公里數,${dataSnapshot.mTkm} km,${dataSnapshot.mKkm} km,${dataSnapshot.mTkm + dataSnapshot.mKkm} km\n`;
+            csvContent += `歷史至今全期累積里程,${dataSnapshot.allTkm} km,${dataSnapshot.allKkm} km,${dataSnapshot.allTkm + dataSnapshot.allKkm} km\n`;
+            csvContent += `當前輪胎已消耗里程,${dataSnapshot.tyreTkm || 0} km,${dataSnapshot.tyreKkm || 0} km,${(dataSnapshot.tyreTkm || 0) + (dataSnapshot.tyreKkm || 0)} km\n\n`;
+            csvContent += `--- 本月日常支出與拆帳明細 ---\n費用項目,總金額,是誰代墊付款,分攤規則方式,Ken應分擔金額\n`;
+            if (dataSnapshot.expenses) { dataSnapshot.expenses.forEach(e => { csvContent += `${e.item},${e.amount},${e.payer},${e.rule},${e.kenShare}\n`; }); }
+            csvContent += `\n最終清算匯款方向,${dataSnapshot.finalActionStr}\n`;
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `${filename}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        window.exportCurrentMonthCSV = function() { if (mileageList.length === 0 && expenseList.length === 0) return alert("尚無資料！"); generateAndDownloadCSV(`本月即時對帳單`, currentMonthCalculatedData, "本月"); };
+        window.exportHistoricalCSV = function(index) { const month = historyMonths[index]; if (month) generateAndDownloadCSV(`歷史結算_${month.label}`, month.snapshot, month.label); };
+        window.downloadSystemBackup = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ systemState, mileageList, expenseList, historyMonths })); const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `車費系統高級全備份.json`); dl.click(); };
+        window.importSystemBackup = async function(event) { const file = event.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = async function(e) { try { const p = JSON.parse(e.target.result); if (p.systemState && confirm("確定覆蓋雲端？")) { systemState = p.systemState; mileageList = p.mileageList || []; expenseList = p.expenseList || []; historyMonths = p.historyMonths || []; await updateCloud(); } } catch(err){} }; r.readAsText(file); };
+        
+        // 重設功能已完全同步重構為 0 里程起點
+        window.hardResetSystem = async function() { if(confirm('確定工廠重設？這將清空所有資料並將初始里程歸 0！')) { systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 }; mileageList = []; expenseList = []; historyMonths = []; await updateCloud(); } };
     </script>
 </body>
 </html>

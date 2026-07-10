@@ -13,102 +13,110 @@
     <style>
         body { 
             font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: #F8FAFC; 
         }
         .mono-font { font-family: "JetBrains Mono", monospace; }
         .pulse-glow { animation: blinker 2.5s linear infinite; }
         @keyframes blinker { 50% { opacity: 0.3; } }
+        
+        /* 隱藏外觀滾動條但保持功能，讓視覺更極簡 */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
     </style>
 </head>
-<body class="text-slate-900 min-h-screen p-4 md:p-12 antialiased">
+<body class="text-slate-900 min-h-screen p-4 md:p-12 antialiased bg-gradient-to-br from-slate-50 via-slate-100/40 to-indigo-50/20">
 
-    <header class="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-slate-200 pb-4 gap-4">
+    <div class="max-w-6xl mx-auto h-[3px] bg-gradient-to-r from-slate-300 via-indigo-500 to-emerald-500 rounded-full mb-6 opacity-80"></div>
+
+    <header class="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-slate-200/80 pb-6 gap-4">
         <div>
-            <span class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase mono-font">FLEET EXPENSE CORE V6.0</span>
-            <h1 class="text-xl font-semibold text-slate-900 tracking-tight mt-1">智慧車費里程對帳系統</h1>
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+                <span class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase mono-font">FLEET EXPENSE CORE V6.2</span>
+            </div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight mt-1">智慧車費里程對帳系統</h1>
         </div>
         <div class="flex items-center gap-6">
-            <div id="cloudStatus" class="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <div id="cloudStatus" class="flex items-center gap-2 text-xs font-semibold text-slate-400 bg-white/80 border border-slate-200 px-3 py-1.5 rounded-full shadow-sm">
                 <span class="w-2 h-2 rounded-full bg-slate-300 pulse-glow"></span>
                 <span>SYSTEM INITIALIZING...</span>
             </div>
-            <button onclick="window.closeCurrentMonth()" class="bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-4 py-2.5 rounded-lg transition-all tracking-wider shadow-sm">
+            <button onclick="window.closeCurrentMonth()" class="bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-4 py-2.5 rounded-lg transition-all tracking-wider shadow-sm active:scale-95">
                 結算本月帳目
             </button>
         </div>
     </header>
 
     <section class="max-w-6xl mx-auto mb-10">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             
-            <div class="bg-white border border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
-                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">本月總里程</span>
-                <p id="heroTotalKm" class="text-2xl font-semibold tracking-tight text-slate-900 mt-2 mono-font">0 km</p>
+            <div class="bg-white border-t-2 border-t-slate-400 border-x border-b border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
+                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase group-hover:text-slate-500 transition-colors">◆ 本月總里程</span>
+                <p id="heroTotalKm" class="text-2xl font-bold tracking-tight text-slate-900 mt-2 mono-font">0 km</p>
                 <span class="text-[10px] text-slate-400 mt-1">雙方接力行駛小計</span>
             </div>
 
-            <div class="bg-white border border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
-                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">本月總日常支出</span>
-                <p id="heroTotalExpense" class="text-2xl font-semibold tracking-tight text-slate-900 mt-2 mono-font">$0</p>
+            <div class="bg-white border-t-2 border-t-slate-400 border-x border-b border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
+                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase group-hover:text-slate-500 transition-colors">◆ 本月總日常支出</span>
+                <p id="heroTotalExpense" class="text-2xl font-bold tracking-tight text-slate-900 mt-2 mono-font">$0</p>
                 <span class="text-[10px] text-slate-400 mt-1">包含充電與常規費用</span>
             </div>
 
-            <div class="bg-white border border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
-                <span class="text-[10px] font-bold tracking-widest text-indigo-500 uppercase">Ken 應分擔額</span>
-                <p id="heroKenShare" class="text-2xl font-bold tracking-tight text-slate-900 mt-2 mono-font">$0</p>
+            <div class="bg-white border-t-2 border-t-indigo-500 border-x border-b border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
+                <span class="text-[10px] font-bold tracking-widest text-indigo-500 uppercase">◇ Ken 應分擔額</span>
+                <p id="heroKenShare" class="text-2xl font-black tracking-tight text-slate-900 mt-2 mono-font">$0</p>
                 <span class="text-[10px] text-slate-400 mt-1">依動態拆帳規則加總</span>
             </div>
 
-            <div id="heroFinalFlowCard" class="bg-slate-900 p-5 rounded-xl shadow-md flex flex-col justify-between transition-all border border-slate-900">
-                <span id="heroFinalTitle" class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">最終支付方向</span>
-                <p id="heroFinalAction" class="text-xs font-medium mt-2 truncate text-slate-300">計算中...</p>
-                <p id="heroFinalAmount" class="text-3xl font-bold tracking-tight text-white mt-1 mono-font">$0</p>
+            <div id="heroFinalFlowCard" class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 hover:shadow-indigo-950/20 hover:-translate-y-0.5">
+                <span id="heroFinalTitle" class="text-[10px] font-bold tracking-widest text-indigo-300 uppercase">⊙ 最終支付方向</span>
+                <p id="heroFinalAction" class="text-xs font-semibold mt-2 truncate text-slate-300">計算中...</p>
+                <p id="heroFinalAmount" class="text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200">$0</p>
             </div>
 
         </div>
     </section>
 
-    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div class="lg:col-span-2 space-y-8">
             
-            <div class="bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
+            <div class="bg-white border border-slate-200/80 p-6 rounded-xl shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-600"></div>
                 <div class="flex justify-between items-baseline mb-4">
                     <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400">01 / 里程接力記錄</h2>
-                    <div class="text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200/60 mono-font">
+                    <div class="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md mono-font font-medium">
                         最新儀表：<span id="currentLatestMileage" class="font-bold text-indigo-600">------</span> km
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">駕駛成員</label>
-                        <!-- 手機端強制 text-base (16px) 防止縮放，桌機端還原 md:text-sm -->
-                        <select id="mileageUser" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 transition-colors">
+                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">駕駛成員</label>
+                        <select id="mileageUser" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 font-medium focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer">
                             <option value="Terence">Terence</option>
                             <option value="Ken">Ken</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">結束里程 (當前儀表板數字)</label>
-                        <input type="number" id="endMileage" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-800 focus:outline-none focus:border-indigo-600 transition-colors mono-font" placeholder="請輸入公里數">
+                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">結束里程 (儀表板數字)</label>
+                        <input type="number" id="endMileage" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-800 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all mono-font" placeholder="請輸入公里數">
                     </div>
                     <div class="flex items-end">
-                        <button onclick="window.addMileage()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg p-2.5 text-xs font-semibold tracking-wider transition shadow-sm">
+                        <button onclick="window.addMileage()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]">
                             送出里程紀錄
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 💸 智慧連動費用面板 -->
-            <div class="bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
+            <div class="bg-white border border-slate-200/80 p-6 rounded-xl shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-slate-800"></div>
                 <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">02 / 支出費用與動態拆帳</h2>
                 <div class="grid grid-cols-2 md:grid-cols-12 gap-4">
                     
-                    <!-- 費用項目 -->
                     <div id="expItemTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
-                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">費用項目</label>
-                        <select id="expItemType" onchange="window.onExpenseItemChanged()" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 transition-colors font-medium">
+                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">費用項目</label>
+                        <select id="expItemType" onchange="window.onExpenseItemChanged()" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all font-semibold cursor-pointer">
                             <option value="⚡ 充電">⚡ 充電</option>
                             <option value="🚗 車貸">🚗 車貸</option>
                             <option value="🛡️ 保險">🛡️ 保險</option>
@@ -116,31 +124,27 @@
                         </select>
                     </div>
 
-                    <!-- 其他事由說明 (預設隱藏) -->
                     <div id="customItemWrapper" class="col-span-2 md:col-span-2 hidden transition-all duration-300">
-                        <label class="block text-[11px] text-indigo-600 uppercase tracking-wider mb-1.5 font-semibold">雜費事由說明</label>
-                        <input type="text" id="expItemCustom" class="w-full bg-white border border-indigo-200 rounded-lg p-2.5 text-base md:text-sm text-slate-800 focus:outline-none focus:border-indigo-600 transition-colors" placeholder="項目名稱">
+                        <label class="block text-[11px] text-indigo-600 uppercase tracking-wider mb-1.5 font-bold">雜費事由說明</label>
+                        <input type="text" id="expItemCustom" class="w-full bg-white border border-indigo-200 rounded-lg p-2.5 text-base md:text-sm text-slate-800 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all" placeholder="項目名稱">
                     </div>
 
-                    <!-- 金額 -->
                     <div class="col-span-1 md:col-span-2">
-                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">金額 (元)</label>
-                        <input type="number" id="expAmount" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-800 focus:outline-none focus:border-indigo-600 transition-colors mono-font" placeholder="TWD">
+                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">金額 (元)</label>
+                        <input type="number" id="expAmount" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-800 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all mono-font" placeholder="TWD">
                     </div>
 
-                    <!-- 代墊先付 -->
                     <div class="col-span-1 md:col-span-2">
-                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">代墊先付</label>
-                        <select id="expPayUser" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 transition-colors">
+                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">代墊先付</label>
+                        <select id="expPayUser" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer">
                             <option value="Terence">Terence</option>
                             <option value="Ken">Ken</option>
                         </select>
                     </div>
 
-                    <!-- 分攤規則 -->
                     <div id="expSplitTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
-                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">分攤規則</label>
-                        <select id="expSplitType" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-colors" disabled>
+                        <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">分攤規則</label>
+                        <select id="expSplitType" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-all" disabled>
                             <option value="month_mileage">📊 依當月里程比例分擔</option>
                             <option value="23_13">Terence 2/3 & Ken 1/3</option>
                             <option value="50_50">50 / 50 平分</option>
@@ -150,9 +154,8 @@
                         </select>
                     </div>
 
-                    <!-- 送出按鈕 -->
                     <div class="col-span-2 md:col-span-2 flex items-end">
-                        <button onclick="window.addExpense()" class="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg p-2.5 text-xs font-semibold tracking-wider transition shadow-sm">
+                        <button onclick="window.addExpense()" class="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]">
                             送出費用
                         </button>
                     </div>
@@ -162,14 +165,20 @@
             <div class="space-y-6">
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">📋 本月接力明細</h3>
-                        <button onclick="window.exportCurrentMonthCSV()" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 underline underline-offset-4 transition">📥 匯出當月報表Excel</button>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">📋 本月接力明細 (最新在最上)</h3>
+                        <button onclick="window.exportCurrentMonthCSV()" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-4 transition-all">📥 匯出當月報表Excel</button>
                     </div>
                     <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                        <div class="overflow-x-auto max-h-52">
-                            <table class="w-full text-left text-xs">
+                        <div class="overflow-x-auto max-h-60 custom-scrollbar">
+                            <table class="w-full text-left text-xs border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50 text-slate-400 border-b border-slate-200 font-medium uppercase tracking-wider"><th class="px-5 py-3">成員</th><th class="px-5 py-3">起始里程</th><th class="px-5 py-3">結束里程</th><th class="px-5 py-3 text-right">小計</th><th class="px-5 py-3 text-center">操作</th></tr>
+                                    <tr class="bg-slate-50 text-slate-400 border-b border-slate-200 font-semibold uppercase tracking-wider">
+                                        <th class="px-5 py-3.5">成員</th>
+                                        <th class="px-5 py-3.5">起始里程</th>
+                                        <th class="px-5 py-3.5">結束里程</th>
+                                        <th class="px-5 py-3.5 text-right">小計</th>
+                                        <th class="px-5 py-3.5 text-center">操作</th>
+                                    </tr>
                                 </thead>
                                 <tbody id="timelineRows" class="divide-y divide-slate-100 text-slate-700 mono-font"></tbody>
                             </table>
@@ -178,12 +187,18 @@
                 </div>
 
                 <div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">💸 本月日常費用支出</h3>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">💸 本月日常費用支出 (最新在最上)</h3>
                     <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                        <div class="overflow-x-auto max-h-52">
-                            <table class="w-full text-left text-xs">
+                        <div class="overflow-x-auto max-h-60 custom-scrollbar">
+                            <table class="w-full text-left text-xs border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50 text-slate-400 border-b border-slate-200 font-medium uppercase tracking-wider"><th class="px-5 py-3">項目</th><th class="px-5 py-3">總額</th><th class="px-5 py-3">代墊者</th><th class="px-5 py-3">拆帳模式說明</th><th class="px-5 py-3 text-center">操作</th></tr>
+                                    <tr class="bg-slate-50 text-slate-400 border-b border-slate-200 font-semibold uppercase tracking-wider">
+                                        <th class="px-5 py-3.5">項目</th>
+                                        <th class="px-5 py-3.5">總額</th>
+                                        <th class="px-5 py-3.5">代墊者</th>
+                                        <th class="px-5 py-3.5">拆帳模式說明</th>
+                                        <th class="px-5 py-3.5 text-center">操作</th>
+                                    </tr>
                                 </thead>
                                 <tbody id="expenseRows" class="divide-y divide-slate-100 text-slate-700"></tbody>
                             </table>
@@ -203,27 +218,27 @@
 
         <div class="space-y-6">
             
-            <div class="bg-white border border-slate-200 p-6 rounded-xl space-y-4 shadow-sm">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2">📈 里程數據大盤與耗損</h2>
+            <div class="bg-white border border-slate-200 p-6 rounded-xl space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2.5">📈 里程數據大盤與耗損</h2>
                 
-                <div class="text-xs text-slate-600 space-y-2.5 bg-slate-50 p-4 rounded-lg border border-slate-200/60 font-light">
-                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1 mb-1 flex justify-between"><span>本月行駛貢獻</span></div>
-                    <div class="flex justify-between mono-font"><span>Terence：</span><span class="font-medium text-slate-900" id="monthTkm">0 km</span></div>
-                    <div class="flex justify-between mono-font"><span>Ken：</span><span class="font-medium text-slate-900" id="monthKkm">0 km</span></div>
+                <div class="text-xs text-slate-600 space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 font-light">
+                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1.5 mb-1 flex justify-between"><span>本月行駛貢獻</span></div>
+                    <div class="flex justify-between items-center mono-font"><span>Terence：</span><span class="font-semibold text-slate-900" id="monthTkm">0 km</span></div>
+                    <div class="flex justify-between items-center mono-font"><span>Ken：</span><span class="font-semibold text-slate-900" id="monthKkm">0 km</span></div>
                     
-                    <div class="flex justify-between font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded text-[10px] mono-font">
-                        <span>📊 當月里程 Ken 佔比：</span><span id="monthRatioKText">0.0%</span>
+                    <div class="flex justify-between items-center font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1.5 rounded-lg text-[10px] mono-font shadow-sm/5">
+                        <span>📊 當月里程 Ken 佔比：</span><span id="monthRatioKText" class="text-xs font-black">0.0%</span>
                     </div>
 
-                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1 pt-2 mb-1 flex justify-between"><span>歷史全期累計大盤</span></div>
-                    <div class="flex justify-between mono-font"><span>Terence 累計：</span><span class="text-slate-900"><span id="allTkm">0</span> km (<span id="allRatioT">0</span>%)</span></div>
-                    <div class="flex justify-between mono-font"><span>Ken 累計：</span><span class="text-slate-900"><span id="allKkm">0</span> km (<span id="allRatioK">0</span>%)</span></div>
+                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1.5 pt-2 mb-1 flex justify-between"><span>歷史全期累計大盤</span></div>
+                    <div class="flex justify-between mono-font"><span>Terence 累計：</span><span class="text-slate-900 font-medium"><span id="allTkm">0</span> km (<span id="allRatioT">0</span>%)</span></div>
+                    <div class="flex justify-between mono-font"><span>Ken 累計：</span><span class="text-slate-900 font-medium"><span id="allKkm">0</span> km (<span id="allRatioK">0</span>%)</span></div>
 
-                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1 pt-2 mb-1 flex justify-between"><span>⚙️ 當前輪胎獨立壽命區間</span></div>
-                    <div class="flex justify-between mono-font"><span>Terence 本胎：</span><span class="text-slate-900"><span id="tyreTkm">0</span> km</span></div>
-                    <div class="flex justify-between mono-font"><span>Ken 本胎：</span><span class="text-slate-900"><span id="tyreKkm">0</span> km</span></div>
-                    <div class="flex justify-between font-semibold text-slate-700 bg-slate-200/60 px-2 py-1 rounded text-[10px] mt-1 mono-font">
-                        <span>💡 輪胎損耗 Ken 應拆帳比：</span><span id="tyreRatioKText">0.0%</span>
+                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1.5 pt-2 mb-1 flex justify-between"><span>⚙️ 當前輪胎獨立壽命區間</span></div>
+                    <div class="flex justify-between mono-font"><span>Terence 本胎：</span><span class="text-slate-900 font-medium"><span id="tyreTkm">0</span> km</span></div>
+                    <div class="flex justify-between mono-font"><span>Ken 本胎：</span><span class="text-slate-900 font-medium"><span id="tyreKkm">0</span> km</span></div>
+                    <div class="flex justify-between items-center font-bold text-slate-700 bg-slate-200/60 px-2.5 py-1.5 rounded-lg text-[10px] mt-1.5 mono-font">
+                        <span>💡 輪胎損耗 Ken 應拆帳比：</span><span id="tyreRatioKText" class="text-xs font-black">0.0%</span>
                     </div>
                 </div>
 
@@ -233,16 +248,16 @@
                 </div>
             </div>
 
-            <div class="bg-slate-900 text-slate-400 p-4 rounded-xl space-y-4 shadow-md">
+            <div class="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-400 p-5 rounded-xl space-y-4 shadow-lg border border-slate-800">
                 <h3 class="text-[10px] font-bold text-indigo-400 tracking-widest uppercase mono-font">🔒 CLOUD INFRASTRUCTURE</h3>
-                <button onclick="window.downloadSystemBackup()" class="w-full bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium py-2 px-3 rounded-lg transition text-center block border border-slate-700">
+                <button onclick="window.downloadSystemBackup()" class="w-full bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs font-medium py-2.5 px-3 rounded-lg transition-all text-center block border border-slate-700 shadow-inner">
                     下載全系統雲端資料備份 (.json)
                 </button>
                 <div class="border-t border-slate-800 pt-3">
-                    <label class="block text-[10px] text-slate-400 font-semibold tracking-wider uppercase mb-1">📤 強制上傳 JSON 覆蓋雲端：</label>
-                    <input type="file" id="importFile" onchange="window.importSystemBackup(event)" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border file:border-slate-700 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-750 w-full">
+                    <label class="block text-[10px] text-slate-400 font-bold tracking-wider uppercase mb-1.5">📤 強制上傳 JSON 覆蓋雲端：</label>
+                    <input type="file" id="importFile" onchange="window.importSystemBackup(event)" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border file:border-slate-700 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-750 w-full cursor-pointer">
                 </div>
-                <button onclick="window.hardResetSystem()" class="w-full text-[10px] text-slate-500 hover:text-rose-400 font-medium transition text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至最原始 0 狀態)</button>
+                <button onclick="window.hardResetSystem()" class="w-full text-[10px] text-slate-500 hover:text-rose-400 font-medium transition-colors text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至最原始 0 狀態)</button>
             </div>
 
         </div>
@@ -274,7 +289,7 @@
                 const cloudData = docSnap.data();
                 systemState = cloudData.systemState || { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
                 mileageList = cloudData.mileageList || []; expenseList = cloudData.expenseList || []; historyMonths = cloudData.historyMonths || [];
-                document.getElementById('cloudStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 pulse-glow"></span><span class="text-emerald-400 font-bold tracking-wider text-[10px] mono-font">LIVE SYNCED</span>`;
+                document.getElementById('cloudStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 pulse-glow"></span><span class="text-emerald-400 font-black tracking-wider text-[10px] mono-font">LIVE SYNCED</span>`;
             } else { updateCloud(); }
             calculateAndRender();
         }, (error) => {
@@ -298,44 +313,56 @@
                 splitDiv.className = "col-span-2 md:col-span-3";
                 splitSelect.value = "month_mileage";
                 splitSelect.disabled = true;
-                splitSelect.className = "w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-colors cursor-not-allowed";
+                splitSelect.className = "w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-all cursor-not-allowed";
             } else if (type === '🚗 車貸' || type === '🛡️ 保險') {
                 wrapper.classList.add('hidden');
                 typeDiv.className = "col-span-2 md:col-span-3";
                 splitDiv.className = "col-span-2 md:col-span-3";
                 splitSelect.value = "23_13";
                 splitSelect.disabled = true;
-                splitSelect.className = "w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-colors cursor-not-allowed";
+                splitSelect.className = "w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-all cursor-not-allowed";
             } else if (type === '其他') {
                 wrapper.classList.remove('hidden');
                 typeDiv.className = "col-span-2 md:col-span-2";
                 splitDiv.className = "col-span-2 md:col-span-3";
                 splitSelect.disabled = false;
-                splitSelect.className = "w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 transition-colors";
+                splitSelect.className = "w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 transition-all";
             }
         };
 
         function calculateAndRender() {
-            const timelineRows = document.getElementById('timelineRows');
-            timelineRows.innerHTML = '';
             let currentLatest = systemState.initialMileage;
             let mTkm = 0, mKkm = 0;
 
-            mileageList.forEach((m, index) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition-colors';
-                tr.innerHTML = `
-                    <td class="px-5 py-3 font-semibold text-slate-900">${m.user}</td>
-                    <td class="px-5 py-3 text-slate-400 font-light">${m.start}</td>
-                    <td class="px-5 py-3 font-medium text-slate-800">${m.end}</td>
-                    <td class="px-5 py-3 text-right font-bold text-slate-900">${m.diff} km</td>
-                    <td class="px-5 py-3 text-center"><button onclick="window.deleteMileage(${index})" class="text-slate-400 hover:text-rose-500 text-[11px] underline">刪除</button></td>
-                `;
-                timelineRows.appendChild(tr);
+            // 1. 先行計算里程統計數據（維持正向時序累加）
+            mileageList.forEach((m) => {
                 if (m.user === 'Terence') mTkm += m.diff;
                 if (m.user === 'Ken') mKkm += m.diff;
                 currentLatest = m.end;
             });
+
+            // 2. 渲染里程明細（反向迴圈，最新排最上）
+            const timelineRows = document.getElementById('timelineRows');
+            timelineRows.innerHTML = '';
+            for (let i = mileageList.length - 1; i >= 0; i--) {
+                const m = mileageList[i];
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition-colors duration-150';
+                
+                // 優化：將成員文字升級為高質感徽章
+                const userBadge = m.user === 'Terence' 
+                    ? '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Terence</span>' 
+                    : '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">Ken</span>';
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3.5">${userBadge}</td>
+                    <td class="px-5 py-3.5 text-slate-400 font-light">${m.start}</td>
+                    <td class="px-5 py-3.5 font-medium text-slate-800">${m.end}</td>
+                    <td class="px-5 py-3.5 text-right font-bold text-slate-900">${m.diff} km</td>
+                    <td class="px-5 py-3.5 text-center"><button onclick="window.deleteMileage(${i})" class="text-slate-400 hover:text-rose-500 text-[11px] underline transition-colors">刪除</button></td>
+                `;
+                timelineRows.appendChild(tr);
+            }
 
             const monthTotalKm = mTkm + mKkm;
             const monthRatioK = monthTotalKm > 0 ? (mKkm / monthTotalKm) : 0.5; 
@@ -360,12 +387,11 @@
             document.getElementById('tyreTkm').innerText = tyreTkm.toLocaleString(); document.getElementById('tyreKkm').innerText = tyreKkm.toLocaleString();
             document.getElementById('tyreRatioKText').innerText = `${(tyreRatioK * 100).toFixed(1)}%`;
 
-            const expenseRows = document.getElementById('expenseRows');
-            expenseRows.innerHTML = '';
+            // 3. 先行處理日常費用計算（維持正向時序）
             let tPaid = 0, kPaid = 0, totalExp = 0, kResponsibility = 0;
             let detailedExpensesWithShare = [];
 
-            expenseList.forEach((e, index) => {
+            expenseList.forEach((e) => {
                 let ruleText = ''; let computedKenShare = 0;
                 totalExp += e.amount;
 
@@ -377,22 +403,34 @@
                 else if (e.splitType === 'tire') { ruleText = `⚙️ 輪胎比例 (${(tyreRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * tyreRatioK; }
 
                 computedKenShare = Math.round(computedKenShare);
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition-colors';
-                tr.innerHTML = `
-                    <td class="px-5 py-3 font-semibold text-slate-900">${e.item}</td>
-                    <td class="px-5 py-3 font-bold text-slate-800 mono-font">$${e.amount.toLocaleString()}</td>
-                    <td class="px-5 py-3 text-slate-500 font-medium">${e.user}</td>
-                    <td class="px-5 py-3 text-slate-400 font-light">${ruleText} <span class="text-indigo-600 font-semibold ml-1 mono-font">(Ken: $${computedKenShare.toLocaleString()})</span></td>
-                    <td class="px-5 py-3 text-center"><button onclick="window.deleteExpense(${index})" class="text-slate-400 hover:text-rose-500 text-[11px] underline">刪除</button></td>
-                `;
-                expenseRows.appendChild(tr);
-
                 if (e.user === 'Terence') tPaid += e.amount;
                 if (e.user === 'Ken') kPaid += e.amount;
                 kResponsibility += computedKenShare;
                 detailedExpensesWithShare.push({ item: e.item, amount: e.amount, payer: e.user, rule: ruleText, kenShare: computedKenShare, createdAt: e.createdAt || '' });
             });
+
+            // 4. 渲染日常費用（反向迴圈，最新排最上）
+            const expenseRows = document.getElementById('expenseRows');
+            expenseRows.innerHTML = '';
+            for (let i = expenseList.length - 1; i >= 0; i--) {
+                const e = expenseList[i];
+                const calculatedInfo = detailedExpensesWithShare[i];
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition-colors duration-150';
+                
+                const payerBadge = e.user === 'Terence' 
+                    ? '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">Terence</span>' 
+                    : '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100">Ken</span>';
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3.5 font-semibold text-slate-900">${e.item}</td>
+                    <td class="px-5 py-3.5 font-bold text-slate-800 mono-font">$${e.amount.toLocaleString()}</td>
+                    <td class="px-5 py-3.5">${payerBadge}</td>
+                    <td class="px-5 py-3.5 text-slate-400 font-light">${calculatedInfo.rule} <span class="text-indigo-600 font-bold ml-1 mono-font">(Ken: $${calculatedInfo.kenShare.toLocaleString()})</span></td>
+                    <td class="px-5 py-3.5 text-center"><button onclick="window.deleteExpense(${i})" class="text-slate-400 hover:text-rose-500 text-[11px] underline transition-colors">刪除</button></td>
+                `;
+                expenseRows.appendChild(tr);
+            }
 
             document.getElementById('heroTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
             document.getElementById('heroKenShare').innerText = `$${Math.round(kResponsibility).toLocaleString()}`;
@@ -408,24 +446,24 @@
             let finalActionStr = "";
             
             if (Math.round(netFlow) === 0) {
-                heroCard.className = "bg-slate-100 p-5 rounded-xl border border-slate-200 flex flex-col justify-between transition-all";
+                heroCard.className = "bg-white border-t-2 border-t-emerald-500 border-x border-b border-slate-200 p-5 rounded-xl flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-md";
                 heroTitle.className = "text-[10px] font-bold tracking-widest text-slate-400 uppercase";
-                heroAction.className = "text-xs font-medium text-slate-400 mt-2 truncate";
-                heroAmount.className = "text-3xl font-bold tracking-tight text-slate-300 mt-1 mono-font";
+                heroAction.className = "text-xs font-semibold text-emerald-600 mt-2 truncate";
+                heroAmount.className = "text-3xl font-black tracking-tight text-slate-300 mt-1 mono-font";
                 heroAction.innerText = "雙方帳目平衡 BALANCE"; heroAmount.innerText = "$0"; finalActionStr = "雙方帳目平衡";
             } else if (netFlow > 0) {
-                heroCard.className = "bg-indigo-600 p-5 rounded-xl shadow-md flex flex-col justify-between transition-all border border-indigo-600 text-white";
-                heroTitle.className = "text-[10px] font-bold tracking-widest text-indigo-200 uppercase";
-                heroAction.className = "text-xs font-medium text-indigo-100 mt-2 truncate";
-                heroAmount.className = "text-3xl font-bold tracking-tight text-white mt-1 mono-font";
+                heroCard.className = "bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 text-white hover:shadow-indigo-950/20";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-indigo-300 uppercase";
+                heroAction.className = "text-xs font-medium text-indigo-200 mt-2 truncate";
+                heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200";
                 heroAction.innerText = "🙋‍♂️ Ken 應匯款給 Terence";
                 heroAmount.innerText = `$${Math.round(netFlow).toLocaleString()}`;
                 finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
             } else {
-                heroCard.className = "bg-emerald-600 p-5 rounded-xl shadow-md flex flex-col justify-between transition-all border border-emerald-600 text-white";
-                heroTitle.className = "text-[10px] font-bold tracking-widest text-emerald-200 uppercase";
-                heroAction.className = "text-xs font-medium text-emerald-100 mt-2 truncate";
-                heroAmount.className = "text-3xl font-bold tracking-tight text-white mt-1 mono-font";
+                heroCard.className = "bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 text-white hover:shadow-emerald-950/20";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-emerald-300 uppercase";
+                heroAction.className = "text-xs font-medium text-emerald-200 mt-2 truncate";
+                heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-emerald-200";
                 heroAction.innerText = "🙋‍♂️ Terence 應匯款給 Ken";
                 heroAmount.innerText = `$${Math.round(Math.abs(netFlow)).toLocaleString()}`;
                 finalActionStr = `Terence 應匯款給 Ken $${Math.round(Math.abs(netFlow)).toLocaleString()}`;
@@ -453,7 +491,7 @@
                     <div class="flex justify-between items-center border-b border-slate-100 pb-1.5">
                         <span class="font-bold text-slate-800 text-xs">📅 ${month.label}</span>
                         <div class="flex gap-3">
-                            <button onclick="window.exportHistoricalCSV(${actualIdx})" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold underline underline-offset-2">Excel</button>
+                            <button onclick="window.exportHistoricalCSV(${actualIdx})" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold underline underline-offset-2">Excel</button>
                             <button onclick="window.deleteHistoryMonth(${actualIdx})" class="text-[11px] text-slate-400 hover:text-rose-600">刪除</button>
                         </div>
                     </div>
@@ -467,18 +505,22 @@
         }
 
         window.addMileage = async function() {
-            const user = document.getElementById('mileageUser').value;
+            const userSelect = document.getElementById('mileageUser');
+            const user = userSelect.value;
             const end = parseInt(document.getElementById('endMileage').value);
             const lastEntry = mileageList[mileageList.length - 1];
             const start = lastEntry ? lastEntry.end : systemState.initialMileage;
             if (isNaN(end)) return alert('請輸入里程數！');
             if (end <= start) return alert(`輸入里程必須大於最新里程 (${start})！`);
             
-            // 📝 核心增強：加入後台專用日期時間戳記
             const nowTimestampStr = new Date().toLocaleString('zh-TW');
             mileageList.push({ user, start, end, diff: end - start, createdAt: nowTimestampStr });
             
-            await updateCloud(); document.getElementById('endMileage').value = '';
+            await updateCloud(); 
+            document.getElementById('endMileage').value = '';
+
+            // 🔄 核心增強：里程送出後自動「換手切換使用者」，保留選單結構
+            userSelect.value = (user === 'Terence') ? 'Ken' : 'Terence';
         };
 
         window.addExpense = async function() {
@@ -499,7 +541,6 @@
 
             if (!amount || amount <= 0) return alert('請輸入正確的費用金額！');
             
-            // 📝 核心增強：加入後台專用日期時間戳記
             const nowTimestampStr = new Date().toLocaleString('zh-TW');
             expenseList.push({ item, amount, user, splitType, createdAt: nowTimestampStr });
             
@@ -519,7 +560,12 @@
                 await updateCloud();
             }
         };
-        window.deleteExpense = async function(idx) { expenseList.splice(idx, 1); await updateCloud(); };
+        window.deleteExpense = async function(idx) { 
+            if(confirm('確定刪除此筆支出項目？')) {
+                expenseList.splice(idx, 1); 
+                await updateCloud(); 
+            }
+        };
 
         window.closeCurrentMonth = async function() {
             if (mileageList.length === 0 && expenseList.length === 0) return alert('當前月份尚無資料！');
@@ -549,7 +595,6 @@
             csvContent += `歷史至今全期累積里程,${dataSnapshot.allTkm} km,${dataSnapshot.allKkm} km,${dataSnapshot.allTkm + dataSnapshot.allKkm} km\n`;
             csvContent += `當前輪胎已消耗里程,${dataSnapshot.tyreTkm || 0} km,${dataSnapshot.tyreKkm || 0} km,${(dataSnapshot.tyreTkm || 0) + (dataSnapshot.tyreKkm || 0)} km\n\n`;
             
-            // 📊 在報表最右方自動附加「系統輸入時間」
             csvContent += `--- 本月里程明細鏈 ---\n成員,起始里程,結束里程,小計里程,系統輸入時間\n`;
             if (dataSnapshot.mileages) {
                 dataSnapshot.mileages.forEach(m => {

@@ -24,11 +24,8 @@
 
     <header class="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-stone-200/60 pb-4 gap-4">
         <div>
-            <div class="flex items-center gap-2">
-                <span class="inline-block w-2 h-2 bg-stone-400 rounded-full"></span>
-                <span class="text-[11px] font-bold tracking-widest text-stone-500 uppercase">OUR TRAVEL LOG</span>
-            </div>
-            <h1 class="text-2xl font-bold text-stone-800 tracking-tight mt-1">生活車費里程對帳隨手記</h1>
+            <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">FLEET & EXPENSE LOG V5</span>
+            <h1 class="text-xl font-light text-stone-900 tracking-tight mt-1">專屬車費里程對帳系統</h1>
         </div>
         <div class="flex items-center gap-6">
             <div id="cloudStatus" class="flex items-center gap-2 text-xs font-medium text-stone-400">
@@ -42,18 +39,12 @@
     </header>
 
     <section class="max-w-6xl mx-auto mb-10">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
                 <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">本月總里程</span>
                 <p id="heroTotalKm" class="text-2xl font-light tracking-tight text-stone-900 mt-2">0 km</p>
                 <span class="text-[10px] text-stone-400 mt-1">雙方接力行駛小計</span>
-            </div>
-
-            <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
-                <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">⚡ 當月充電累積</span>
-                <p id="heroTotalCharging" class="text-2xl font-light tracking-tight text-stone-900 mt-2">$0</p>
-                <span class="text-[10px] text-stone-400 mt-1">專屬充電花費小計</span>
             </div>
 
             <div class="bg-white border border-stone-200 p-5 rounded-xl shadow-sm flex flex-col justify-between">
@@ -113,11 +104,17 @@
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div class="col-span-2 md:col-span-1">
                         <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">費用項目</label>
-                        <input type="text" id="expItem" onkeydown="if(event.key==='Enter') addExpense()" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="項目名稱">
+                        <select id="expItem" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-700 focus:outline-none focus:border-stone-900 transition-colors cursor-pointer">
+                            <option value="充電">⚡ 充電</option>
+                            <option value="車貸">🚗 車貸</option>
+                            <option value="保險">🛡️ 保險</option>
+                            <option value="ETC">🛣️ ETC</option>
+                            <option value="其他">📝 其他</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">金額 (元)</label>
-                        <input type="number" id="expAmount" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter') addExpense()" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="TWD">
+                        <input type="number" id="expAmount" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key === 'Enter') addExpense()" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-sm text-stone-800 focus:outline-none focus:border-stone-900 transition-colors" placeholder="TWD">
                     </div>
                     <div>
                         <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-medium">代墊先付</label>
@@ -189,7 +186,7 @@
         <div class="space-y-6">
             
             <div class="bg-white border border-stone-200 p-6 rounded-xl space-y-4">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">📈 里程大盤與耗損細節</h2>
+                <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">📈 里里程大盤與耗損細節</h2>
                 
                 <div class="text-xs text-stone-600 space-y-2.5 bg-stone-50 p-4 rounded-lg border border-stone-100 font-light">
                     <div class="font-semibold text-stone-800 border-b border-stone-200 pb-1 mb-1 flex justify-between"><span>本月個別開車量</span></div>
@@ -233,9 +230,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ==========================================
-        // ⚠️ 請在下方貼上你申請到的 Firebase 帳號密鑰配置 ⚠️
-        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDCmmNy3jnq1T0nG9BWSd6AiolvNcopFGM",
             authDomain: "track-car-spending.firebaseapp.com",
@@ -312,17 +306,12 @@
 
             const expenseRows = document.getElementById('expenseRows');
             expenseRows.innerHTML = '';
-            let tPaid = 0, kPaid = 0, totalExp = 0, kResponsibility = 0, totalCharging = 0;
+            let tPaid = 0, kPaid = 0, totalExp = 0, kResponsibility = 0;
             let detailedExpensesWithShare = [];
 
             expenseList.forEach((e, index) => {
                 let ruleText = ''; let computedKenShare = 0;
                 totalExp += e.amount;
-
-                // 篩選並自動加總充電項目的費用
-                if (e.item.includes('充電')) {
-                    totalCharging += e.amount;
-                }
 
                 if (e.splitType === '50_50') { ruleText = '50/50平分'; computedKenShare = e.amount * 0.5; } 
                 else if (e.splitType === '23_13') { ruleText = 'Terence 2/3 & Ken 1/3'; computedKenShare = e.amount * (1 / 3); } 
@@ -347,9 +336,6 @@
                 kResponsibility += computedKenShare;
                 detailedExpensesWithShare.push({ item: e.item, amount: e.amount, payer: e.user, rule: ruleText, kenShare: computedKenShare });
             });
-
-            // 更新最上方新增的充電累積數據卡片
-            document.getElementById('heroTotalCharging').innerText = `$${totalCharging.toLocaleString()}`;
 
             document.getElementById('heroTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
             document.getElementById('heroKenShare').innerText = `$${Math.round(kResponsibility).toLocaleString()}`;
@@ -385,7 +371,7 @@
             } else {
                 heroCard.className = "bg-stone-200 p-5 rounded-xl flex flex-col justify-between transition-all border border-stone-300";
                 heroTitle.className = "text-[10px] font-bold tracking-widest text-stone-600 uppercase";
-                heroAction.className = "text-xs font-medium text-stone-880 mt-2 truncate";
+                heroAction.className = "text-xs font-medium text-stone-800 mt-2 truncate";
                 heroAmount.className = "text-3xl font-bold tracking-tight text-stone-900 mt-1";
                 
                 heroAction.innerText = "🙋‍♂️ Terence 應匯款給 Ken";
@@ -395,7 +381,7 @@
 
             currentMonthCalculatedData = {
                 mTkm, mKkm, allTkm, allKkm, allRatioK, tyreTkm, tyreKkm, tyreRatioK, baseT, baseK,
-                tPaid, kPaid, kResponsibility, netFlow, finalActionStr, totalCharging,
+                tPaid, kPaid, kResponsibility, netFlow, finalActionStr,
                 mileages: JSON.parse(JSON.stringify(mileageList)), expenses: detailedExpensesWithShare
             };
             renderHistoryMonths();
@@ -421,8 +407,7 @@
                     </div>
                     <div class="text-[11px] text-stone-500 space-y-0.5 font-light">
                         <div>當月里程: T:${month.snapshot.mTkm}km / K:${month.snapshot.mKkm}km</div>
-                        <div>充電累積: $${(month.snapshot.totalCharging || 0).toLocaleString()}</div>
-                        <div class="text-stone-800 font-medium mt-1">結果：${month.snapshot.finalActionStr}</div>
+                        <div class="text-stone-800 font-medium">結果：${month.snapshot.finalActionStr}</div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -441,7 +426,15 @@
         };
 
         window.addExpense = async function() {
-            const item = document.getElementById('expItem').value.trim();
+            let item = document.getElementById('expItem').value;
+            
+            // 如果使用者選擇「其他」，則彈出 prompt 詢問自訂項目名稱
+            if (item === '其他') {
+                const customItem = prompt('請輸入自訂費用項目名稱：', '');
+                if (!customItem || customItem.trim() === '') return; // 取消或未填寫則不送出
+                item = customItem.trim();
+            }
+
             const amount = parseInt(document.getElementById('expAmount').value);
             const user = document.getElementById('expPayUser').value;
             const splitType = document.getElementById('expSplitType').value;
@@ -449,7 +442,8 @@
             if (!amount || amount <= 0) return alert('請輸入正確的費用金額！');
             expenseList.push({ item, amount, user, splitType });
             await updateCloud();
-            document.getElementById('expItem').value = ''; document.getElementById('expAmount').value = '';
+            document.getElementById('expItem').value = '充電'; // 送出後預設調回第一個選項
+            document.getElementById('expAmount').value = '';
         };
 
         window.deleteMileage = async function(idx) {
@@ -487,7 +481,6 @@
         function generateAndDownloadCSV(filename, dataSnapshot, titleLabel) {
             let csvContent = "\uFEFF=== " + titleLabel + " 車費與里程對帳報表 ===\n\n--- 里程與大盤存摺摘要 ---\n項目,Terence,Ken,總計\n";
             csvContent += `本月開車公里數,${dataSnapshot.mTkm} km,${dataSnapshot.mKkm} km,${dataSnapshot.mTkm + dataSnapshot.mKkm} km\n`;
-            csvContent += `當月充電累積費用,,,${dataSnapshot.totalCharging || 0} 元\n`;
             csvContent += `歷史至今全期累積里程,${dataSnapshot.allTkm} km,${dataSnapshot.allKkm} km,${dataSnapshot.allTkm + dataSnapshot.allKkm} km\n`;
             csvContent += `當前輪胎已消耗里程,${dataSnapshot.tyreTkm || 0} km,${dataSnapshot.tyreKkm || 0} km,${(dataSnapshot.tyreTkm || 0) + (dataSnapshot.tyreKkm || 0)} km\n\n`;
             csvContent += `--- 本月日常支出與拆帳明細 ---\n費用項目,總金額,是誰代墊付款,分攤規則方式,Ken應分擔金額\n`;

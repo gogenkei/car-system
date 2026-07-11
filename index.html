@@ -334,7 +334,8 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-stone-50/60 transition-colors';
                 tr.innerHTML = `
-                    <td class="px-5 py-2.5 font-medium text-stone-900">${e.item}</td>                     <td class="px-5 py-2.5 font-semibold text-stone-800">$${e.amount.toLocaleString()}</td>
+                    <td class="px-5 py-2.5 font-medium text-stone-900">${e.item}</td>
+                    <td class="px-5 py-2.5 font-semibold text-stone-800">$${e.amount.toLocaleString()}</td>
                     <td class="px-5 py-2.5 text-stone-500">${e.user}</td>
                     <td class="px-5 py-2.5 text-stone-400 font-light">${ruleText} <span class="text-stone-600 font-medium ml-1">(Ken: $${computedKenShare.toLocaleString()})</span></td>
                     <td class="px-5 py-2.5 text-center"><button onclick="deleteExpense(${index})" class="text-stone-400 hover:text-stone-900 text-[11px] underline">刪除</button></td>
@@ -414,4 +415,94 @@
                     <div class="flex justify-between items-center border-b border-stone-100 pb-1.5">
                         <span class="font-medium text-stone-900 text-xs">📅 ${month.label}</span>
                         <div class="flex gap-3">
-                            <button onclick="exportHistoricalCSV(${actual
+                            <button onclick="exportHistoricalCSV(${actualIdx})" class="text-[11px] text-stone-400 hover:text-stone-900 underline underline-offset-2">Excel</button>
+                            <button onclick="deleteHistoryMonth(${actualIdx})" class="text-[11px] text-stone-400 hover:text-red-600">刪除</button>
+                        </div>
+                    </div>
+                    <div class="text-[11px] text-stone-500 space-y-0.5 font-light">
+                        <div>當月里程: T:${month.snapshot.mTkm}km / K:${month.snapshot.mKkm}km</div>
+                        <div>充電累積: $${(month.snapshot.totalCharging || 0).toLocaleString()}</div>
+                        <div class="text-stone-800 font-medium mt-1">結果：${month.snapshot.finalActionStr}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.addMileage = async function() {
+            const user = document.getElementById('mileageUser').value;
+            const end = parseInt(document.getElementById('endMileage').value);
+            const lastEntry = mileageList[mileageList.length - 1];
+            const start = lastEntry ? lastEntry.end : systemState.initialMileage;
+            if (!end) return alert('請輸入里程數！');
+            if (end <= start) return alert(`輸入里程必須大於最新里程 (${start})！`);
+            mileageList.push({ user, start, end, diff: end - start });
+            await updateCloud(); document.getElementById('endMileage').value = '';
+        };
+
+        window.addExpense = async function() {
+            const item = document.getElementById('expItem').value.trim();
+            const amount = parseInt(document.getElementById('expAmount').value);
+            const user = document.getElementById('expPayUser').value;
+            const splitType = document.getElementById('expSplitType').value;
+            if (!item) return alert('請填寫費用項目名稱！');
+            if (!amount || amount <= 0) return alert('請輸入正確的費用金額！');
+            expenseList.push({ item, amount, user, splitType });
+            await updateCloud();
+            document.getElementById('expItem').value = ''; document.getElementById('expAmount').value = '';
+        };
+
+        window.deleteMileage = async function(idx) {
+            if(confirm('確定刪除此里程？系統將自動重構接力鏈並同步。')) {
+                mileageList.splice(idx, 1);
+                let current = systemState.initialMileage;
+                mileageList.forEach(m => { m.start = current; m.end = current + m.diff; current = m.end; });
+                await updateCloud();
+            }
+        };
+        window.deleteExpense = async function(idx) { expenseList.splice(idx, 1); await updateCloud(); };
+
+        window.closeCurrentMonth = async function() {
+            if (mileageList.length === 0 && expenseList.length === 0) return alert('當前月份尚無資料！');
+            const currentLatest = mileageList.length > 0 ? mileageList[mileageList.length - 1].end : systemState.initialMileage;
+            const monthLabel = prompt("請輸入本次結算的月份名稱標籤：", `${new Date().getFullYear()}年${new Date().getMonth() + 1}月`);
+            if (!monthLabel || monthLabel.trim() === "") return;
+
+            if (confirm(`確定要結算並永久將帳目推往雲端歷史區嗎？`)) {
+                const hasTyreExpense = expenseList.some(e => e.splitType === 'tire');
+                historyMonths.push({ label: monthLabel.trim(), snapshot: JSON.parse(JSON.stringify(currentMonthCalculatedData)), timestamp: Date.now() });
+                systemState.historyTkm += currentMonthCalculatedData.mTkm;
+                systemState.historyKkm += currentMonthCalculatedData.mKkm;
+                systemState.initialMileage = currentLatest;
+                if (hasTyreExpense) { systemState.tyreBaseTkm = systemState.historyTkm; systemState.tyreBaseKkm = systemState.historyKkm; }
+                mileageList = []; expenseList = []; await updateCloud();
+                alert(`🎉 【${monthLabel}】已成功結算安全封存。`);
+            }
+        };
+
+        window.deleteHistoryMonth = async function(index) {
+            if (confirm(`確定要刪除歷史封存備份嗎？`)) { historyMonths.splice(index, 1); await updateCloud(); }
+        };
+
+        function generateAndDownloadCSV(filename, dataSnapshot, titleLabel) {
+            let csvContent = "\uFEFF=== " + titleLabel + " 車費與里程對帳報表 ===\n\n--- 里程與大盤存摺摘要 ---\n項目,Terence,Ken,總計\n";
+            csvContent += `本月開車公里數,${dataSnapshot.mTkm} km,${dataSnapshot.mKkm} km,${dataSnapshot.mTkm + dataSnapshot.mKkm} km\n`;
+            csvContent += `當月充電累積費用,,,${dataSnapshot.totalCharging || 0} 元\n`;
+            csvContent += `歷史至今全期累積里程,${dataSnapshot.allTkm} km,${dataSnapshot.allKkm} km,${dataSnapshot.allTkm + dataSnapshot.allKkm} km\n`;
+            csvContent += `當前輪胎已消耗里程,${dataSnapshot.tyreTkm || 0} km,${dataSnapshot.tyreKkm || 0} km,${(dataSnapshot.tyreTkm || 0) + (dataSnapshot.tyreKkm || 0)} km\n\n`;
+            csvContent += `--- 本月日常支出與拆帳明細 ---\n費用項目,總金額,是誰代墊付款,分攤規則方式,Ken應分擔金額\n`;
+            if (dataSnapshot.expenses) { dataSnapshot.expenses.forEach(e => { csvContent += `${e.item},${e.amount},${e.payer},${e.rule},${e.kenShare}\n`; }); }
+            csvContent += `\n最終清算匯款方向,${dataSnapshot.finalActionStr}\n`;
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `${filename}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        window.exportCurrentMonthCSV = function() { if (mileageList.length === 0 && expenseList.length === 0) return alert("尚無資料！"); generateAndDownloadCSV(`本月即時對帳單`, currentMonthCalculatedData, "本月"); };
+        window.exportHistoricalCSV = function(index) { const month = historyMonths[index]; if (month) generateAndDownloadCSV(`歷史結算_${month.label}`, month.snapshot, month.label); };
+        window.downloadSystemBackup = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ systemState, mileageList, expenseList, historyMonths })); const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `車費系統高級全備份.json`); dl.click(); };
+        window.importSystemBackup = async function(event) { const file = event.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = async function(e) { try { const p = JSON.parse(e.target.result); if (p.systemState && confirm("確定覆蓋雲端？")) { systemState = p.systemState; mileageList = p.mileageList || []; expenseList = p.expenseList || []; historyMonths = p.historyMonths || []; await updateCloud(); } } catch(err){} }; r.readAsText(file); };
+        window.hardResetSystem = async function() { if(confirm('確定工廠重設？')) { systemState = { initialMileage: 78725, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 }; mileageList = []; expenseList = []; historyMonths = []; await updateCloud(); } };
+    </script>
+</body>
+</html>

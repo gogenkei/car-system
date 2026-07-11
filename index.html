@@ -18,10 +18,12 @@
         .pulse-glow { animation: blinker 2.5s linear infinite; }
         @keyframes blinker { 50% { opacity: 0.3; } }
         
-        /* 隱藏外觀滾動條但保持功能，讓視覺更極簡 */
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        
+        /* 手勢滑動時禁止網頁原生滾動干擾 */
+        .swipe-item { touch-action: pan-y; }
     </style>
 </head>
 <body class="text-slate-900 min-h-screen p-4 md:p-12 antialiased bg-gradient-to-br from-slate-50 via-slate-100/40 to-indigo-50/20">
@@ -32,7 +34,7 @@
         <div>
             <div class="flex items-center gap-2">
                 <span class="inline-block w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
-                <span class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase mono-font">FLEET EXPENSE CORE V6.2</span>
+                <span class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase mono-font">FLEET EXPENSE CORE V6.5</span>
             </div>
             <h1 class="text-xl font-bold text-slate-900 tracking-tight mt-1">智慧車費里程對帳系統</h1>
         </div>
@@ -49,31 +51,26 @@
 
     <section class="max-w-6xl mx-auto mb-10">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            
             <div class="bg-white border-t-2 border-t-slate-400 border-x border-b border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
-                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase group-hover:text-slate-500 transition-colors">◆ 本月總里程</span>
+                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">◆ 本月總里程</span>
                 <p id="heroTotalKm" class="text-2xl font-bold tracking-tight text-slate-900 mt-2 mono-font">0 km</p>
                 <span class="text-[10px] text-slate-400 mt-1">雙方接力行駛小計</span>
             </div>
-
             <div class="bg-white border-t-2 border-t-slate-400 border-x border-b border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
-                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase group-hover:text-slate-500 transition-colors">◆ 本月總日常支出</span>
+                <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">◆ 本月總日常支出</span>
                 <p id="heroTotalExpense" class="text-2xl font-bold tracking-tight text-slate-900 mt-2 mono-font">$0</p>
                 <span class="text-[10px] text-slate-400 mt-1">包含充電與常規費用</span>
             </div>
-
             <div class="bg-white border-t-2 border-t-indigo-500 border-x border-b border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
                 <span class="text-[10px] font-bold tracking-widest text-indigo-500 uppercase">◇ Ken 應分擔額</span>
                 <p id="heroKenShare" class="text-2xl font-black tracking-tight text-slate-900 mt-2 mono-font">$0</p>
                 <span class="text-[10px] text-slate-400 mt-1">依動態拆帳規則加總</span>
             </div>
-
             <div id="heroFinalFlowCard" class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 hover:shadow-indigo-950/20 hover:-translate-y-0.5">
                 <span id="heroFinalTitle" class="text-[10px] font-bold tracking-widest text-indigo-300 uppercase">⊙ 最終支付方向</span>
                 <p id="heroFinalAction" class="text-xs font-semibold mt-2 truncate text-slate-300">計算中...</p>
                 <p id="heroFinalAmount" class="text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200">$0</p>
             </div>
-
         </div>
     </section>
 
@@ -111,15 +108,20 @@
 
             <div class="bg-white border border-slate-200/80 p-6 rounded-xl shadow-sm relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-1 h-full bg-slate-800"></div>
-                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">02 / 支出費用與動態拆帳</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400">02 / 支出費用與動態拆帳</h2>
+                    <div id="editBadgeContainer" class="hidden">
+                        <span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">✏️ 正在編輯模式</span>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 md:grid-cols-12 gap-4">
-                    
                     <div id="expItemTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
                         <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">費用項目</label>
                         <select id="expItemType" onchange="window.onExpenseItemChanged()" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all font-semibold cursor-pointer">
                             <option value="⚡ 充電">⚡ 充電</option>
-                            <option value="🚗 車貸">🚗 車貸</option>
                             <option value="🛡️ 保險">🛡️ 保險</option>
+                            <option value="🚗 車貸">🚗 車貸</option>
+                            <option value="🛣️ ETC">🛣️ ETC</option>
                             <option value="其他">📝 其他雜費 (手動輸入)</option>
                         </select>
                     </div>
@@ -144,7 +146,7 @@
 
                     <div id="expSplitTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
                         <label class="block text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-bold">分攤規則</label>
-                        <select id="expSplitType" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-all" disabled>
+                        <select id="expSplitType" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 transition-all cursor-pointer">
                             <option value="month_mileage">📊 依當月里程比例分擔</option>
                             <option value="23_13">Terence 2/3 & Ken 1/3</option>
                             <option value="50_50">50 / 50 平分</option>
@@ -155,7 +157,7 @@
                     </div>
 
                     <div class="col-span-2 md:col-span-2 flex items-end">
-                        <button onclick="window.addExpense()" class="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]">
+                        <button id="submitExpenseBtn" onclick="window.addExpense()" class="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]">
                             送出費用
                         </button>
                     </div>
@@ -187,30 +189,11 @@
                 </div>
 
                 <div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">💸 本月日常費用支出 (最新在最上)</h3>
-                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                        <div class="overflow-x-auto max-h-60 custom-scrollbar">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-50 text-slate-400 border-b border-slate-200 font-semibold uppercase tracking-wider">
-                                        <th class="px-5 py-3.5">項目</th>
-                                        <th class="px-5 py-3.5">總額</th>
-                                        <th class="px-5 py-3.5">代墊者</th>
-                                        <th class="px-5 py-3.5">拆帳模式說明</th>
-                                        <th class="px-5 py-3.5 text-center">操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="expenseRows" class="divide-y divide-slate-100 text-slate-700"></tbody>
-                            </table>
-                        </div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">💸 本月日常費用支出 (<span class="text-indigo-600">⇄ 左右滑動可編輯/刪除</span>)</h3>
                     </div>
-                </div>
-            </div>
-
-            <div class="pt-2">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">📂 歷史已封存存摺</h3>
-                <div id="historyContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <p class="text-xs text-slate-400 italic py-2 col-span-2">尚無歷史封存數據。</p>
+                    <div id="expenseCardContainer" class="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
+                        </div>
                 </div>
             </div>
             
@@ -230,7 +213,7 @@
                         <span>📊 當月里程 Ken 佔比：</span><span id="monthRatioKText" class="text-xs font-black">0.0%</span>
                     </div>
 
-                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1.5 pt-2 mb-1 flex justify-between"><span>歷史全期累計大盤</span></div>
+                    <div class="font-bold text-slate-800 border-b border-slate-200 pb-1.5 pt-2 mb-1 flex justify-between"><span>歷史至今全期大盤</span></div>
                     <div class="flex justify-between mono-font"><span>Terence 累計：</span><span class="text-slate-900 font-medium"><span id="allTkm">0</span> km (<span id="allRatioT">0</span>%)</span></div>
                     <div class="flex justify-between mono-font"><span>Ken 累計：</span><span class="text-slate-900 font-medium"><span id="allKkm">0</span> km (<span id="allRatioK">0</span>%)</span></div>
 
@@ -248,6 +231,20 @@
                 </div>
             </div>
 
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300">
+                <button onclick="window.toggleHistoryPanel()" class="w-full bg-slate-50/60 hover:bg-slate-50 px-5 py-4 flex items-center justify-between border-b border-slate-200/60 transition-colors focus:outline-none">
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-400 text-xs">📂</span>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">歷史已封存存摺</h3>
+                    </div>
+                    <svg id="historyChevron" class="w-4 h-4 text-slate-400 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="historyCollapseContent" class="hidden p-4 space-y-3 max-h-64 overflow-y-auto custom-scrollbar bg-slate-50/30">
+                    </div>
+            </div>
+
             <div class="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-400 p-5 rounded-xl space-y-4 shadow-lg border border-slate-800">
                 <h3 class="text-[10px] font-bold text-indigo-400 tracking-widest uppercase mono-font">🔒 CLOUD INFRASTRUCTURE</h3>
                 <button onclick="window.downloadSystemBackup()" class="w-full bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs font-medium py-2.5 px-3 rounded-lg transition-all text-center block border border-slate-700 shadow-inner">
@@ -257,7 +254,7 @@
                     <label class="block text-[10px] text-slate-400 font-bold tracking-wider uppercase mb-1.5">📤 強制上傳 JSON 覆蓋雲端：</label>
                     <input type="file" id="importFile" onchange="window.importSystemBackup(event)" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border file:border-slate-700 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-750 w-full cursor-pointer">
                 </div>
-                <button onclick="window.hardResetSystem()" class="w-full text-[10px] text-slate-500 hover:text-rose-400 font-medium transition-colors text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至最原始 0 狀態)</button>
+                <button onclick="window.hardResetSystem()" class="w-full text-[10px] text-slate-500 hover:text-rose-400 font-medium transition-colors text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至原始 0 狀態)</button>
             </div>
 
         </div>
@@ -283,6 +280,7 @@
 
         let systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
         let mileageList = []; let expenseList = []; let historyMonths = []; let currentMonthCalculatedData = {};
+        let editingExpenseIndex = null; // 紀錄目前正在編輯的費用索引
 
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -300,33 +298,48 @@
             try { await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths }); } catch (err) {}
         }
 
+        // 歷史面板摺疊開關
+        window.toggleHistoryPanel = function() {
+            const content = document.getElementById('historyCollapseContent');
+            const chevron = document.getElementById('historyChevron');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        };
+
         window.onExpenseItemChanged = function() {
             const type = document.getElementById('expItemType').value;
             const wrapper = document.getElementById('customItemWrapper');
             const typeDiv = document.getElementById('expItemTypeDiv');
-            const splitDiv = document.getElementById('expSplitTypeDiv');
             const splitSelect = document.getElementById('expSplitType');
             
+            // 預設重置狀態
+            splitSelect.disabled = false;
+            splitSelect.className = "w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer";
+
             if (type === '⚡ 充電') {
                 wrapper.classList.add('hidden');
                 typeDiv.className = "col-span-2 md:col-span-3";
-                splitDiv.className = "col-span-2 md:col-span-3";
                 splitSelect.value = "month_mileage";
                 splitSelect.disabled = true;
                 splitSelect.className = "w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-all cursor-not-allowed";
             } else if (type === '🚗 車貸' || type === '🛡️ 保險') {
                 wrapper.classList.add('hidden');
                 typeDiv.className = "col-span-2 md:col-span-3";
-                splitDiv.className = "col-span-2 md:col-span-3";
                 splitSelect.value = "23_13";
                 splitSelect.disabled = true;
                 splitSelect.className = "w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-400 focus:outline-none transition-all cursor-not-allowed";
+            } else if (type === '🛣️ ETC') {
+                // 🛣️ ETC 核心需求：完全解鎖，且不鎖定/不預設綁定任何特定規則
+                wrapper.classList.add('hidden');
+                typeDiv.className = "col-span-2 md:col-span-3";
             } else if (type === '其他') {
                 wrapper.classList.remove('hidden');
                 typeDiv.className = "col-span-2 md:col-span-2";
-                splitDiv.className = "col-span-2 md:col-span-3";
-                splitSelect.disabled = false;
-                splitSelect.className = "w-full bg-white border border-slate-200 rounded-lg p-2.5 text-base md:text-sm text-slate-700 focus:outline-none focus:border-indigo-600 transition-all";
             }
         };
 
@@ -334,14 +347,13 @@
             let currentLatest = systemState.initialMileage;
             let mTkm = 0, mKkm = 0;
 
-            // 1. 先行計算里程統計數據（維持正向時序累加）
             mileageList.forEach((m) => {
                 if (m.user === 'Terence') mTkm += m.diff;
                 if (m.user === 'Ken') mKkm += m.diff;
                 currentLatest = m.end;
             });
 
-            // 2. 渲染里程明細（反向迴圈，最新排最上）
+            // 1. 渲染里程明細（最新在最上）
             const timelineRows = document.getElementById('timelineRows');
             timelineRows.innerHTML = '';
             for (let i = mileageList.length - 1; i >= 0; i--) {
@@ -349,7 +361,6 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50/80 transition-colors duration-150';
                 
-                // 優化：將成員文字升級為高質感徽章
                 const userBadge = m.user === 'Terence' 
                     ? '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Terence</span>' 
                     : '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">Ken</span>';
@@ -387,7 +398,7 @@
             document.getElementById('tyreTkm').innerText = tyreTkm.toLocaleString(); document.getElementById('tyreKkm').innerText = tyreKkm.toLocaleString();
             document.getElementById('tyreRatioKText').innerText = `${(tyreRatioK * 100).toFixed(1)}%`;
 
-            // 3. 先行處理日常費用計算（維持正向時序）
+            // 2. 處理日常費用計算
             let tPaid = 0, kPaid = 0, totalExp = 0, kResponsibility = 0;
             let detailedExpensesWithShare = [];
 
@@ -396,40 +407,62 @@
                 totalExp += e.amount;
 
                 if (e.splitType === '50_50') { ruleText = '50/50平分'; computedKenShare = e.amount * 0.5; } 
-                else if (e.splitType === 'month_mileage') { ruleText = `📊 當月里程比 (${(monthRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * monthRatioK; }
-                else if (e.splitType === '23_13') { ruleText = 'Terence 2/3 & Ken 1/3'; computedKenShare = e.amount * (1 / 3); } 
+                else if (e.splitType === 'month_mileage') { ruleText = `📊 里程比 (${(monthRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * monthRatioK; }
+                else if (e.splitType === '23_13') { ruleText = 'T 2/3 & K 1/3'; computedKenShare = e.amount * (1 / 3); } 
                 else if (e.splitType === 'Terence') { ruleText = '全歸 Terence'; computedKenShare = 0; } 
                 else if (e.splitType === 'Ken') { ruleText = '全歸 Ken'; computedKenShare = e.amount; } 
-                else if (e.splitType === 'tire') { ruleText = `⚙️ 輪胎比例 (${(tyreRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * tyreRatioK; }
+                else if (e.splitType === 'tire') { ruleText = `⚙️ 輪胎比 (${(tyreRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * tyreRatioK; }
 
                 computedKenShare = Math.round(computedKenShare);
                 if (e.user === 'Terence') tPaid += e.amount;
                 if (e.user === 'Ken') kPaid += e.amount;
                 kResponsibility += computedKenShare;
-                detailedExpensesWithShare.push({ item: e.item, amount: e.amount, payer: e.user, rule: ruleText, kenShare: computedKenShare, createdAt: e.createdAt || '' });
+                detailedExpensesWithShare.push({ item: e.item, amount: e.amount, payer: e.user, rule: ruleText, kenShare: computedKenShare, splitType: e.splitType });
             });
 
-            // 4. 渲染日常費用（反向迴圈，最新排最上）
-            const expenseRows = document.getElementById('expenseRows');
-            expenseRows.innerHTML = '';
+            // 3. 核心升級：將日常費用渲染為「高動態滑動手勢卡片流」（最新在最上）
+            const cardContainer = document.getElementById('expenseCardContainer');
+            cardContainer.innerHTML = '';
+
+            if (expenseList.length === 0) {
+                cardContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">當月尚無日常費用支出紀錄。</p>`;
+            }
+
             for (let i = expenseList.length - 1; i >= 0; i--) {
                 const e = expenseList[i];
-                const calculatedInfo = detailedExpensesWithShare[i];
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50/80 transition-colors duration-150';
+                const calc = detailedExpensesWithShare[i];
                 
-                const payerBadge = e.user === 'Terence' 
-                    ? '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">Terence</span>' 
-                    : '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100">Ken</span>';
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = "relative overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm swipe-item select-none";
+                cardWrapper.setAttribute('data-index', i);
 
-                tr.innerHTML = `
-                    <td class="px-5 py-3.5 font-semibold text-slate-900">${e.item}</td>
-                    <td class="px-5 py-3.5 font-bold text-slate-800 mono-font">$${e.amount.toLocaleString()}</td>
-                    <td class="px-5 py-3.5">${payerBadge}</td>
-                    <td class="px-5 py-3.5 text-slate-400 font-light">${calculatedInfo.rule} <span class="text-indigo-600 font-bold ml-1 mono-font">(Ken: $${calculatedInfo.kenShare.toLocaleString()})</span></td>
-                    <td class="px-5 py-3.5 text-center"><button onclick="window.deleteExpense(${i})" class="text-slate-400 hover:text-rose-500 text-[11px] underline transition-colors">刪除</button></td>
+                const payerBadge = e.user === 'Terence' 
+                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Terence 代墊</span>' 
+                    : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">Ken 代墊</span>';
+
+                cardWrapper.innerHTML = `
+                    <div class="absolute inset-0 flex justify-between text-xs font-bold text-white tracking-widest">
+                        <div class="bg-indigo-600 flex items-center pl-6 justify-start w-1/2">✏️ 右滑進入編輯</div>
+                        <div class="bg-rose-500 flex items-center pr-6 justify-end w-1/2">🗑️ 左滑立刻刪除</div>
+                    </div>
+                    <div class="relative bg-white p-4 flex items-center justify-between transition-transform duration-200 ease-out pointer-events-none inner-content">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 text-sm">${e.item}</span>
+                                ${payerBadge}
+                            </div>
+                            <div class="text-[11px] text-slate-400 font-light">
+                                規則：${calc.rule} <span class="text-indigo-600 font-semibold ml-1">(Ken分擔: $${calc.kenShare.toLocaleString()})</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-black text-slate-900 mono-font">$${e.amount.toLocaleString()}</span>
+                        </div>
+                    </div>
                 `;
-                expenseRows.appendChild(tr);
+                
+                cardContainer.appendChild(cardWrapper);
+                bindSwipeGestures(cardWrapper, i);
             }
 
             document.getElementById('heroTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
@@ -452,7 +485,7 @@
                 heroAmount.className = "text-3xl font-black tracking-tight text-slate-300 mt-1 mono-font";
                 heroAction.innerText = "雙方帳目平衡 BALANCE"; heroAmount.innerText = "$0"; finalActionStr = "雙方帳目平衡";
             } else if (netFlow > 0) {
-                heroCard.className = "bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 text-white hover:shadow-indigo-950/20";
+                heroCard.className = "bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 text-white hover:shadow-indigo-950/20 hover:-translate-y-0.5";
                 heroTitle.className = "text-[10px] font-bold tracking-widest text-indigo-300 uppercase";
                 heroAction.className = "text-xs font-medium text-indigo-200 mt-2 truncate";
                 heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200";
@@ -460,7 +493,7 @@
                 heroAmount.innerText = `$${Math.round(netFlow).toLocaleString()}`;
                 finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
             } else {
-                heroCard.className = "bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 text-white hover:shadow-emerald-950/20";
+                heroCard.className = "bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-slate-800 text-white hover:shadow-emerald-950/20 hover:-translate-y-0.5";
                 heroTitle.className = "text-[10px] font-bold tracking-widest text-emerald-300 uppercase";
                 heroAction.className = "text-xs font-medium text-emerald-200 mt-2 truncate";
                 heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-emerald-200";
@@ -472,35 +505,138 @@
             currentMonthCalculatedData = {
                 mTkm, mKkm, allTkm, allKkm, allRatioK, tyreTkm, tyreKkm, tyreRatioK, baseT, baseK,
                 tPaid, kPaid, kResponsibility, netFlow, finalActionStr,
-                mileages: JSON.parse(JSON.stringify(mileageList)), expenses: detailedExpensesWithShare
+                mileages: JSON.parse(JSON.stringify(mileageList)), expenses: expenseList
             };
             renderHistoryMonths();
         }
 
+        // 🧬 萬能全端手勢引擎：同時兼容手機觸控滑動與桌機滑鼠拖移
+        function bindSwipeGestures(el, index) {
+            const inner = el.querySelector('.inner-content');
+            let startX = 0; let currentX = 0; let isDragging = false;
+            const threshold = 100; // 觸發閾值公釐數
+
+            // 統一化處理起始點
+            function pullStart(e) {
+                isDragging = true;
+                startX = e.touches ? e.touches[0].clientX : e.clientX;
+                inner.classList.remove('transition-transform');
+            }
+
+            // 統一化處理拖移中
+            function pullMove(e) {
+                if (!isDragging) return;
+                currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                let diffX = currentX - startX;
+                
+                // 阻尼極限限幅，阻絕過度拖曳
+                if (diffX > 140) diffX = 140;
+                if (diffX < -140) diffX = -140;
+                
+                inner.style.transform = `translateX(${diffX}px)`;
+            }
+
+            // 統一化處理釋放手勢
+            function pullEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                inner.classList.add('transition-transform');
+                const finalDiff = currentX - startX;
+
+                if (startX === 0 || currentX === 0) {
+                    resetPos(); return;
+                }
+
+                if (finalDiff < -threshold) {
+                    // 左滑成功 -> 刪除項目
+                    window.deleteExpense(index);
+                } else if (finalDiff > threshold) {
+                    // 右滑成功 -> 進入編輯模式
+                    window.enterEditExpenseMode(index);
+                    resetPos();
+                } else {
+                    resetPos();
+                }
+                startX = 0; currentX = 0;
+            }
+
+            function resetPos() {
+                inner.style.transform = 'translateX(0px)';
+            }
+
+            // 手機端 Touch 事件
+            el.addEventListener('touchstart', pullStart, { passive: true });
+            el.addEventListener('touchmove', pullMove, { passive: true });
+            el.addEventListener('touchend', pullEnd);
+
+            // 桌機端 Mouse 滑鼠拖移事件
+            el.addEventListener('mousedown', pullStart);
+            window.addEventListener('mousemove', pullMove);
+            window.addEventListener('mouseup', pullEnd);
+        }
+
+        // ✏️ 右滑進入編輯模式：自動回填數據
+        window.enterEditExpenseMode = function(index) {
+            editingExpenseIndex = index;
+            const exp = expenseList[index];
+
+            const typeSelect = document.getElementById('expItemType');
+            const customInput = document.getElementById('expItemCustom');
+            const amountInput = document.getElementById('expAmount');
+            const payUserSelect = document.getElementById('expPayUser');
+            const splitSelect = document.getElementById('expSplitType');
+
+            amountInput.value = exp.amount;
+            payUserSelect.value = exp.user;
+
+            // 檢查是否屬於內建預設項目
+            if (['⚡ 充電', '🚗 車貸', '🛡️ 保險', '🛣️ ETC'].includes(exp.item)) {
+                typeSelect.value = exp.item;
+            } else {
+                typeSelect.value = '其他';
+                customInput.value = exp.item;
+            }
+
+            window.onExpenseItemChanged();
+            splitSelect.value = exp.splitType;
+
+            // 界面標示切換
+            document.getElementById('editBadgeContainer').classList.remove('hidden');
+            document.getElementById('submitExpenseBtn').innerText = "💾 儲存修改項目";
+            document.getElementById('submitExpenseBtn').className = "w-full bg-amber-600 hover:bg-amber-700 text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]";
+            
+            // 自動平滑捲動到輸入表單位置，優化操作體驗
+            document.getElementById('expItemType').scrollIntoView({ behavior: 'smooth' });
+        };
+
         function renderHistoryMonths() {
             const container = document.getElementById('historyContainer');
+            const collapseContainer = document.getElementById('historyCollapseContent');
+            
             if (historyMonths.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 italic py-2 col-span-2">尚無歷史封存數據。</p>'; return;
+                collapseContainer.innerHTML = '<p class="text-xs text-slate-400 italic py-2 text-center">尚無歷史封存數據。</p>'; 
+                return;
             }
-            container.innerHTML = '';
+            collapseContainer.innerHTML = '';
+            
             historyMonths.slice().reverse().forEach((month, revIdx) => {
                 const actualIdx = historyMonths.length - 1 - revIdx;
                 const card = document.createElement('div');
-                card.className = "bg-white border border-slate-200 p-4 rounded-xl space-y-2 hover:border-indigo-400 transition-colors shadow-sm";
+                card.className = "bg-white border border-slate-200 p-3.5 rounded-xl space-y-2 hover:border-indigo-400 transition-colors shadow-sm text-xs";
                 card.innerHTML = `
                     <div class="flex justify-between items-center border-b border-slate-100 pb-1.5">
-                        <span class="font-bold text-slate-800 text-xs">📅 ${month.label}</span>
+                        <span class="font-bold text-slate-800">📅 ${month.label}</span>
                         <div class="flex gap-3">
                             <button onclick="window.exportHistoricalCSV(${actualIdx})" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold underline underline-offset-2">Excel</button>
                             <button onclick="window.deleteHistoryMonth(${actualIdx})" class="text-[11px] text-slate-400 hover:text-rose-600">刪除</button>
                         </div>
                     </div>
                     <div class="text-[11px] text-slate-500 space-y-0.5 font-light mono-font">
-                        <div>當月里程: Terence:${month.snapshot.mTkm}km / Ken:${month.snapshot.mKkm}km</div>
+                        <div>里程: Terence:${month.snapshot.mTkm}km / Ken:${month.snapshot.mKkm}km</div>
                         <div class="text-slate-800 font-semibold mt-1 font-sans">結果：${month.snapshot.finalActionStr}</div>
                     </div>
                 `;
-                container.appendChild(card);
+                collapseContainer.appendChild(card);
             });
         }
 
@@ -518,9 +654,7 @@
             
             await updateCloud(); 
             document.getElementById('endMileage').value = '';
-
-            // 🔄 核心增強：里程送出後自動「換手切換使用者」，保留選單結構
-            userSelect.value = (user === 'Terence') ? 'Ken' : 'Terence';
+            userSelect.value = (user === 'Terence') ? 'Ken' : 'Terence'; // 自動換手
         };
 
         window.addExpense = async function() {
@@ -534,15 +668,25 @@
             
             const amount = parseInt(document.getElementById('expAmount').value);
             const user = document.getElementById('expPayUser').value;
-            
-            let splitType = document.getElementById('expSplitType').value;
-            if (type === '⚡ 充電') splitType = 'month_mileage';
-            if (type === '🚗 車貸' || type === '🛡️ 保險') splitType = '23_13';
+            const splitType = document.getElementById('expSplitType').value;
 
             if (!amount || amount <= 0) return alert('請輸入正確的費用金額！');
-            
             const nowTimestampStr = new Date().toLocaleString('zh-TW');
-            expenseList.push({ item, amount, user, splitType, createdAt: nowTimestampStr });
+            
+            const expenseData = { item, amount, user, splitType, createdAt: nowTimestampStr };
+
+            if (editingExpenseIndex !== null) {
+                // 編輯儲存分支
+                expenseList[editingExpenseIndex] = expenseData;
+                editingExpenseIndex = null;
+                // 重設按鈕外觀
+                document.getElementById('editBadgeContainer').classList.add('hidden');
+                document.getElementById('submitExpenseBtn').innerText = "送出費用";
+                document.getElementById('submitExpenseBtn').className = "w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]";
+            } else {
+                // 新增費用分支
+                expenseList.push(expenseData);
+            }
             
             await updateCloud();
             
@@ -560,10 +704,20 @@
                 await updateCloud();
             }
         };
+
         window.deleteExpense = async function(idx) { 
-            if(confirm('確定刪除此筆支出項目？')) {
+            if(confirm(`確定要刪除第 ${expenseList.length - idx} 筆支出項目（${expenseList[idx].item}: $${expenseList[idx].amount}）嗎？`)) {
+                // 如果被刪除的項目正是目前在編輯的項目，退出編輯模式
+                if (editingExpenseIndex === idx) {
+                    editingExpenseIndex = null;
+                    document.getElementById('editBadgeContainer').classList.add('hidden');
+                    document.getElementById('submitExpenseBtn').innerText = "送出費用";
+                    document.getElementById('submitExpenseBtn').className = "w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]";
+                }
                 expenseList.splice(idx, 1); 
                 await updateCloud(); 
+            } else {
+                calculateAndRender(); // 取消刪除時重置卡片回原位
             }
         };
 
@@ -602,10 +756,10 @@
                 });
             }
             
-            csvContent += `\n--- 本月日常支出與拆帳明細 ---\n費用項目,總金額,是誰代墊付款,分攤規則方式,Ken應分擔金額,系統輸入時間\n`;
+            csvContent += `\n--- 本月日常支出與拆帳明細 ---\n費用項目,總金額,是誰代墊付款,分攤規則方式,系統輸入時間\n`;
             if (dataSnapshot.expenses) { 
                 dataSnapshot.expenses.forEach(e => { 
-                    csvContent += `${e.item},${e.amount},${e.payer},${e.rule},${e.kenShare},${e.createdAt || ''}\n`; 
+                    csvContent += `${e.item},${e.amount},${e.user || e.payer},${e.splitType || e.rule},${e.createdAt || ''}\n`; 
                 }); 
             }
             csvContent += `\n最終清算匯款方向,${dataSnapshot.finalActionStr}\n`;

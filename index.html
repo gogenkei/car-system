@@ -3,313 +3,407 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026年7月 車費與里程對帳圖表報表</title>
+  <title>智慧車費與里程對帳系統 (Terence & Ken)</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Tailwind 自訂莫蘭迪配色組合 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            morandi: {
+              bg: '#F4F5F7',
+              card: '#FFFFFF',
+              primary: '#5C6B73',
+              secondary: '#9DB4C0',
+              accent: '#C2D7D0',
+              text: '#2B2D42',
+              muted: '#8D99AE',
+              highlight: '#E07A5F',
+              ken: '#4A7C59',
+              terence: '#3D5A80'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Firebase Compatibility SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
   <style>
-    :root {
-      --primary-color: #2c3e50;
-      --bg-color: #f8f9fa;
-      --card-bg: #ffffff;
-      --border-color: #e9ecef;
-      --text-main: #333333;
-      --text-muted: #6c757d;
-      --accent-color: #2563eb;
-    }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      margin: 0;
-      padding: 24px;
-      display: flex;
-      justify-content: center;
+      background-color: #F4F5F7;
+      color: #2B2D42;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-
-    .container {
-      width: 100%;
-      max-width: 900px;
-      background: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-      padding: 32px;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      color: var(--primary-color);
-      margin-top: 0;
-      margin-bottom: 24px;
-      border-bottom: 2px solid var(--border-color);
-      padding-bottom: 12px;
-    }
-
-    h2 {
-      font-size: 1.1rem;
-      color: var(--primary-color);
-      margin-top: 32px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .summary-card {
-      background-color: #f0f7ff;
-      border: 1px solid #bae6fd;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 24px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-    }
-
-    .summary-item label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .summary-item .value {
-      font-size: 1.25rem;
-      font-weight: bold;
-      color: var(--accent-color);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 24px;
-      font-size: 0.9rem;
-    }
-
-    th, td {
-      padding: 10px 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    th {
-      background-color: #fafafa;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-
-    tr:hover {
-      background-color: #f8fafc;
-    }
-
-    .text-right {
-      text-align: right;
-    }
-
-    .text-center {
-      text-align: center;
-    }
-
-    .highlight-column {
-      font-weight: bold;
-      color: #1e40af;
-      background-color: #eff6ff;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      background-color: #e2e8f0;
-      color: #475569;
-    }
-
-    .footer-note {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-align: center;
-      margin-top: 32px;
+    .card-shadow {
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     }
   </style>
 </head>
-<body>
+<body class="min-h-screen pb-12">
 
-<div class="container">
-  <h1>2026年7月 車費與里程對帳圖表報表</h1>
-
-  <!-- 月份里程摘要 -->
-  <div class="summary-card">
-    <div class="summary-item">
-      <label>當月總里程</label>
-      <div class="value" id="total-mileage-val">0 km</div>
+  <!-- 頂部導航列 -->
+  <header class="bg-morandi-primary text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-car-side text-2xl text-morandi-accent"></i>
+        <h1 class="text-xl font-bold tracking-wide">車費與里程對帳系統</h1>
+      </div>
+      <div class="flex items-center space-x-3 text-sm">
+        <span class="bg-white/10 px-3 py-1 rounded-full"><i class="fa-solid fa-user-group mr-1"></i> Terence & Ken</span>
+        <button id="exportPdfBtn" onclick="window.print()" class="bg-morandi-secondary hover:bg-opacity-90 px-3 py-1 rounded-lg transition text-white">
+          <i class="fa-solid fa-file-pdf mr-1"></i> 列印 / 匯出 PDF
+        </button>
+      </div>
     </div>
-    <div class="summary-item">
-      <label>Ken 總里程 (比例)</label>
-      <div class="value" id="ken-mileage-val">0 km (0%)</div>
-    </div>
-    <div class="summary-item">
-      <label>Terence 總里程 (比例)</label>
-      <div class="value" id="terence-mileage-val">0 km (0%)</div>
-    </div>
-  </div>
+  </header>
 
-  <!-- 里程對帳紀錄表 -->
-  <h2>🛣️ 行駛里程紀錄</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>駕駛人</th>
-        <th>起始里程</th>
-        <th>結束里程</th>
-        <th class="text-right">小計里程</th>
-        <th>記錄時間</th>
-      </tr>
-    </thead>
-    <tbody id="mileage-tbody"></tbody>
-  </table>
+  <main class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
 
-  <!-- 費用支出與拆帳明細 -->
-  <h2>💸 費用支出與拆帳明細記錄</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>費用項目</th>
-        <th class="text-right">總金額</th>
-        <th class="text-center">代墊人</th>
-        <th class="text-center">分攤規則</th>
-        <th class="text-right highlight-column">Ken 應分擔</th>
-        <th>記錄時間</th>
-      </tr>
-    </thead>
-    <tbody id="expense-tbody"></tbody>
-  </table>
+    <!-- KPI 數據看板 -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-white p-5 rounded-xl card-shadow border border-gray-100">
+        <p class="text-sm text-morandi-muted font-medium">當月總支出額</p>
+        <h3 id="kpiTotalExpense" class="text-2xl font-bold mt-1 text-morandi-text">$0</h3>
+      </div>
+      <div class="bg-white p-5 rounded-xl card-shadow border border-gray-100">
+        <p class="text-sm text-morandi-muted font-medium">Ken 應分擔總額</p>
+        <h3 id="kpiKenShare" class="text-2xl font-bold mt-1 text-morandi-ken">$0</h3>
+      </div>
+      <div class="bg-white p-5 rounded-xl card-shadow border border-gray-100">
+        <p class="text-sm text-morandi-muted font-medium">Terence 應分擔總額</p>
+        <h3 id="kpiTerenceShare" class="text-2xl font-bold mt-1 text-morandi-terence">$0</h3>
+      </div>
+      <div class="bg-white p-5 rounded-xl card-shadow border border-gray-100">
+        <p class="text-sm text-morandi-muted font-medium">當月結算結餘 (Net Balance)</p>
+        <h3 id="kpiSettlement" class="text-xl font-bold mt-1 text-morandi-highlight">計算中...</h3>
+      </div>
+    </section>
 
-  <div class="footer-note">
-    報表產生時間：2026/8/1 13:30 | https://gogenkei.github.io/car-system/
-  </div>
-</div>
+    <!-- 里程統計與圖表區域 -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-5 rounded-xl card-shadow border border-gray-100 md:col-span-1 flex flex-col justify-between">
+        <div>
+          <h2 class="text-lg font-bold mb-4 text-morandi-primary flex items-center">
+            <i class="fa-solid fa-gauge-high mr-2"></i> 里程比例統計
+          </h2>
+          <div class="space-y-3">
+            <div class="flex justify-between text-sm">
+              <span>Ken 行駛里程：</span>
+              <span id="kenKmText" class="font-semibold text-morandi-ken">0 km (0%)</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span>Terence 行駛里程：</span>
+              <span id="terenceKmText" class="font-semibold text-morandi-terence">0 km (0%)</span>
+            </div>
+            <div class="flex justify-between text-sm pt-2 border-t">
+              <span>當月總計里程：</span>
+              <span id="totalKmText" class="font-bold">0 km</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 h-40">
+          <canvas id="mileageChart"></canvas>
+        </div>
+      </div>
 
-<script>
-  // 1. 原始里程資料
-  const mileageLogs = [
-    { driver: 'Ken', start: 97021, end: 97553, mileage: 532, time: '2026/7/27 下午5:09:43' },
-    { driver: 'Ken', start: 97553, end: 97638, mileage: 85, time: '2026/7/27 下午11:45:31' },
-    { driver: 'Terence', start: 97638, end: 97878, mileage: 240, time: '2026/7/28 下午5:56:26' },
-    { driver: 'Ken', start: 97878, end: 97970, mileage: 92, time: '2026/7/29 上午8:27:09' },
-    { driver: 'Terence', start: 97970, end: 98314, mileage: 344, time: '2026/7/30 下午5:59:28' },
-    { driver: 'Ken', start: 98314, end: 98447, mileage: 133, time: '2026/7/31 凌晨1:13:28' },
-    { driver: 'Terence', start: 98447, end: 98533, mileage: 86, time: '2026/7/31 下午5:29:15' }
-  ];
+      <!-- 里程明細列表 -->
+      <div class="bg-white p-5 rounded-xl card-shadow border border-gray-100 md:col-span-2">
+        <h2 class="text-lg font-bold mb-4 text-morandi-primary flex items-center">
+          <i class="fa-solid fa-route mr-2"></i> 里程記錄明細
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-gray-50 text-gray-600">
+              <tr>
+                <th class="p-2.5">駕駛</th>
+                <th class="p-2.5 text-right">起始 (km)</th>
+                <th class="p-2.5 text-right">結束 (km)</th>
+                <th class="p-2.5 text-right">里程 (km)</th>
+                <th class="p-2.5 text-center">記錄時間</th>
+              </tr>
+            </thead>
+            <tbody id="mileageTableBody" class="divide-y">
+              <!-- 動態渲染 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-  // 2. 原始費用資料
-  const expenseLogs = [
-    { name: '🚗 車貸', amount: 20200, payer: 'Ken', rule: '23_13', time: '2026/7/11 下午8:39:01' },
-    { name: '🛡️ 保險', amount: 3656, payer: 'Ken', rule: '23_13', time: '2026/7/11 下午8:39:41' },
-    { name: '⚡ 充電', amount: 36, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:29' },
-    { name: '⚡ 充電', amount: 63, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:33' },
-    { name: '⚡ 充電', amount: 206, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:38' },
-    { name: '⚡ 充電', amount: 138, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:57' },
-    { name: '⚡ 充電', amount: 43, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:02' },
-    { name: '⚡ 充電', amount: 296, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:08' },
-    { name: '⚡ 充電', amount: 35, payer: 'Terence', rule: 'month_mileage', time: '2026/7/11 下午8:41:20' },
-    { name: '⚡ 充電', amount: 55, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:38' },
-    { name: '⚡ 充電', amount: 295, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:44' },
-    { name: '⚡ 充電', amount: 59, payer: 'Terence', rule: 'month_mileage', time: '2026/7/11 下午8:41:58' },
-    { name: '⚡ 充電', amount: 15, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:10' },
-    { name: '⚡ 充電', amount: 43, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:14' },
-    { name: '⚡ 充電', amount: 215, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:20' },
-    { name: '⚡ 充電', amount: 266, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:30' },
-    { name: '⚡ 充電', amount: 131, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:33' },
-    { name: '⚡ 充電', amount: 203, payer: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:38' }
-  ];
+    <!-- 費用支出與拆帳明細 (修正重點) -->
+    <section class="bg-white p-5 rounded-xl card-shadow border border-gray-100">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-morandi-primary flex items-center">
+          <i class="fa-solid fa-receipt mr-2"></i> 費用支出與拆帳明細記錄
+        </h2>
+        <span class="text-xs text-morandi-muted bg-gray-100 px-2 py-1 rounded">
+          規則支援：23_13 (固定比例) / month_mileage (里程比例)
+        </span>
+      </div>
 
-  // 計算里程總計與比例
-  function getMileageStats() {
-    let total = 0;
-    let ken = 0;
-    let terence = 0;
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-gray-50 text-gray-700">
+            <tr>
+              <th class="p-3">費用項目</th>
+              <th class="p-3 text-right">總金額</th>
+              <th class="p-3 text-center">代墊人</th>
+              <th class="p-3 text-center">分攤規則</th>
+              <th class="p-3 text-right text-morandi-ken font-bold bg-green-50/50">Ken 應分擔</th>
+              <th class="p-3 text-right text-morandi-terence font-bold">Terence 應分擔</th>
+              <th class="p-3 text-center">記錄時間</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTableBody" class="divide-y">
+            <!-- 動態渲染 -->
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-    mileageLogs.forEach(log => {
-      const dist = Number(log.mileage) || 0;
-      total += dist;
-      if (log.driver.trim().toLowerCase() === 'ken') {
-        ken += dist;
+  </main>
+
+  <script>
+    // 1. Firebase 初始化設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyDCmmNy3jnq1T0nG9BWSd6AiolvNcopFGM",
+      authDomain: "track-car-spending.firebaseapp.com",
+      projectId: "track-car-spending",
+      storageBucket: "track-car-spending.appspot.com",
+      messagingSenderId: "10987654321",
+      appId: "1:10987654321:web:abcdef123456"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // 預設示範資料 (當雲端查無資料或離線時自動帶入)
+    const defaultMileageData = [
+      { driver: 'Terence', startKm: 97021, endKm: 97553, time: '2026/7/27 下午5:09:43' },
+      { driver: 'Ken',     startKm: 97553, endKm: 97638, time: '2026/7/27 下午11:45:31' },
+      { driver: 'Terence', startKm: 97638, endKm: 97878, time: '2026/7/28 下午5:56:26' },
+      { driver: 'Ken',     startKm: 97878, endKm: 97970, time: '2026/7/29 上午8:27:09' },
+      { driver: 'Terence', startKm: 97970, endKm: 98314, time: '2026/7/30 下午5:59:28' },
+      { driver: 'Ken',     startKm: 98314, endKm: 98447, time: '2026/7/31 凌晨1:13:28' },
+      { driver: 'Terence', startKm: 98447, endKm: 98533, time: '2026/7/31 下午5:29:15' }
+    ];
+
+    const defaultExpenseData = [
+      { item: '🏎 車貸', amount: 20200, paidBy: 'Ken', rule: '23_13', time: '2026/7/11 下午8:39:01' },
+      { item: '🛡 保險', amount: 3656,  paidBy: 'Ken', rule: '23_13', time: '2026/7/11 下午8:39:41' },
+      { item: '⚡ 充電', amount: 36,    paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:29' },
+      { item: '⚡ 充電', amount: 63,    paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:33' },
+      { item: '⚡ 充電', amount: 206,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:38' },
+      { item: '⚡ 充電', amount: 138,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:40:57' },
+      { item: '⚡ 充電', amount: 43,    paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:02' },
+      { item: '⚡ 充電', amount: 296,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:08' },
+      { item: '⚡ 充電', amount: 35,    paidBy: 'Terence', rule: 'month_mileage', time: '2026/7/11 下午8:41:20' },
+      { item: '⚡ 充電', amount: 55,    paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:38' },
+      { item: '⚡ 充電', amount: 295,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:41:44' },
+      { item: '⚡ 充電', amount: 59,    paidBy: 'Terence', rule: 'month_mileage', time: '2026/7/11 下午8:41:58' },
+      { item: '⚡ 充電', amount: 15,    paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:10' },
+      { item: '⚡ 充電', amount: 43,    paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:14' },
+      { item: '⚡ 充電', amount: 215,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:20' },
+      { item: '⚡ 充電', amount: 266,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:30' },
+      { item: '⚡ 充電', amount: 131,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:33' },
+      { item: '⚡ 充電', amount: 203,   paidBy: 'Ken', rule: 'month_mileage', time: '2026/7/11 下午8:42:38' }
+    ];
+
+    let chartInstance = null;
+
+    // 核心計算與渲染主函式
+    function calculateAndRender(mileageList, expenseList) {
+      let kenKm = 0;
+      let terenceKm = 0;
+      let totalKm = 0;
+
+      // 1. 計算里程
+      const mileageTbody = document.getElementById('mileageTableBody');
+      mileageTbody.innerHTML = '';
+
+      mileageList.forEach(item => {
+        const driven = item.endKm - item.startKm;
+        totalKm += driven;
+        
+        // 人名模糊比對防錯
+        const driverLower = (item.driver || '').toLowerCase();
+        if (driverLower.includes('ken')) {
+          kenKm += driven;
+        } else {
+          terenceKm += driven;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2.5 font-medium">${item.driver}</td>
+          <td class="p-2.5 text-right">${item.startKm}</td>
+          <td class="p-2.5 text-right">${item.endKm}</td>
+          <td class="p-2.5 text-right font-semibold">${driven} km</td>
+          <td class="p-2.5 text-center text-xs text-gray-500">${item.time || '-'}</td>
+        `;
+        mileageTbody.appendChild(tr);
+      });
+
+      // 更新里程統計文字
+      const kenPct = totalKm > 0 ? ((kenKm / totalKm) * 100).toFixed(1) : 0;
+      const terencePct = totalKm > 0 ? ((terenceKm / totalKm) * 100).toFixed(1) : 0;
+
+      document.getElementById('kenKmText').innerText = `${kenKm} km (${kenPct}%)`;
+      document.getElementById('terenceKmText').innerText = `${terenceKm} km (${terencePct}%)`;
+      document.getElementById('totalKmText').innerText = `${totalKm} km`;
+
+      // 2. 計算費用與拆帳金額 (重點修正之 Ken 分擔額計算邏輯)
+      let grandTotalExpense = 0;
+      let grandKenShare = 0;
+      let grandTerenceShare = 0;
+      let kenPaidTotal = 0;
+      let terencePaidTotal = 0;
+
+      const expenseTbody = document.getElementById('expenseTableBody');
+      expenseTbody.innerHTML = '';
+
+      expenseList.forEach(exp => {
+        const amount = Number(exp.amount) || 0;
+        grandTotalExpense += amount;
+
+        // 計算代墊金額
+        const paidByLower = (exp.paidBy || '').toLowerCase();
+        if (paidByLower.includes('ken')) {
+          kenPaidTotal += amount;
+        } else {
+          terencePaidTotal += amount;
+        }
+
+        // 拆帳邏輯核心函式
+        const kenShare = calculateKenShare(amount, exp.rule, kenKm, totalKm);
+        const terenceShare = amount - kenShare;
+
+        grandKenShare += kenShare;
+        grandTerenceShare += terenceShare;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-3 font-medium">${exp.item}</td>
+          <td class="p-3 text-right font-semibold">$${amount.toLocaleString()}</td>
+          <td class="p-3 text-center"><span class="px-2 py-1 bg-gray-100 rounded text-xs">${exp.paidBy}</span></td>
+          <td class="p-3 text-center"><span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-mono">${exp.rule}</span></td>
+          <td class="p-3 text-right font-bold text-morandi-ken bg-green-50/30">$${kenShare.toLocaleString()}</td>
+          <td class="p-3 text-right font-bold text-morandi-terence">$${terenceShare.toLocaleString()}</td>
+          <td class="p-3 text-center text-xs text-gray-400">${exp.time || '-'}</td>
+        `;
+        expenseTbody.appendChild(tr);
+      });
+
+      // 3. 更新 KPI 看板
+      document.getElementById('kpiTotalExpense').innerText = `$${grandTotalExpense.toLocaleString()}`;
+      document.getElementById('kpiKenShare').innerText = `$${grandKenShare.toLocaleString()}`;
+      document.getElementById('kpiTerenceShare').innerText = `$${grandTerenceShare.toLocaleString()}`;
+
+      // 結算金額 (Ken 應付金額 - Ken 已代墊金額)
+      const kenNetOwed = grandKenShare - kenPaidTotal;
+      const settlementElem = document.getElementById('kpiSettlement');
+      if (kenNetOwed > 0) {
+        settlementElem.innerText = `Ken 需支付 Terence $${Math.abs(kenNetOwed).toLocaleString()}`;
+        settlementElem.className = "text-xl font-bold mt-1 text-red-600";
+      } else if (kenNetOwed < 0) {
+        settlementElem.innerText = `Terence 需支付 Ken $${Math.abs(kenNetOwed).toLocaleString()}`;
+        settlementElem.className = "text-xl font-bold mt-1 text-green-600";
       } else {
-        terence += dist;
+        settlementElem.innerText = `雙方已結清 (尚無差額)`;
+        settlementElem.className = "text-xl font-bold mt-1 text-gray-600";
+      }
+
+      // 4. 繪製 / 更新里程圓餅圖
+      renderChart(kenKm, terenceKm);
+    }
+
+    // 核心 Ken 分擔額計算邏輯 (避免 0 值的關鍵)
+    function calculateKenShare(amount, rule, kenKm, totalKm) {
+      if (!rule) return Math.round(amount / 2);
+
+      const cleanRule = String(rule).trim().toLowerCase();
+
+      // 規則 1: 23_13 按 23:13 比例拆帳 (Ken 23 / Terence 13，總和 36)
+      if (cleanRule === '23_13' || cleanRule === '23:13') {
+        return Math.round(amount * (23 / 36));
+      }
+
+      // 規則 2: month_mileage 按當月總里程比例拆帳
+      if (cleanRule === 'month_mileage') {
+        if (totalKm > 0) {
+          return Math.round(amount * (kenKm / totalKm));
+        }
+        return Math.round(amount / 2); // 若無里程則平均分攤
+      }
+
+      // 規則 3: 50_50 或平分
+      if (cleanRule === '50_50' || cleanRule === '1:1') {
+        return Math.round(amount / 2);
+      }
+
+      // 預設Fallback：按半平分
+      return Math.round(amount / 2);
+    }
+
+    // Chart.js 圓餅圖渲染
+    function renderChart(kenKm, terenceKm) {
+      const ctx = document.getElementById('mileageChart').getContext('2d');
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Ken 里程', 'Terence 里程'],
+          datasets: [{
+            data: [kenKm, terenceKm],
+            backgroundColor: ['#4A7C59', '#3D5A80'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    // 頁面載入後自動執行，優先載入 Firebase，無連線時調用示範資料
+    window.addEventListener('DOMContentLoaded', () => {
+      // 初始化渲染
+      calculateAndRender(defaultMileageData, defaultExpenseData);
+
+      // 嘗試監聽 Firebase 雲端資料 (若已有設定 Collection)
+      try {
+        db.collection("reports").doc("latest").onSnapshot((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            calculateAndRender(data.mileage || defaultMileageData, data.expenses || defaultExpenseData);
+          }
+        }, (error) => {
+          console.warn("使用預設靜態資料庫渲染對帳單:", error);
+        });
+      } catch (e) {
+        console.log("Firebase 離線模式，使用本機預設數據");
       }
     });
-
-    return { total, ken, terence };
-  }
-
-  // 核心拆帳修復邏輯
-  function calculateKenShare(expense, stats) {
-    const amount = Number(expense.amount) || 0;
-    const rule = String(expense.rule || '').trim();
-
-    // 1. 按比例/天數拆帳 (如 "23_13")
-    if (rule.includes('_')) {
-      const parts = rule.split('_').map(Number);
-      const kenRatio = parts[0] || 0;
-      const totalRatio = parts.reduce((a, b) => a + b, 0);
-      if (totalRatio > 0) {
-        return Math.round((amount * kenRatio) / totalRatio);
-      }
-    }
-
-    // 2. 按當月總里程分攤 ("month_mileage")
-    if (rule === 'month_mileage') {
-      if (stats.total > 0) {
-        return Math.round((amount * stats.ken) / stats.total);
-      }
-    }
-
-    return 0;
-  }
-
-  // 渲染畫面
-  function render() {
-    const stats = getMileageStats();
-
-    // 更新頂部卡片
-    const kenPct = stats.total > 0 ? ((stats.ken / stats.total) * 100).toFixed(1) : 0;
-    const terencePct = stats.total > 0 ? ((stats.terence / stats.total) * 100).toFixed(1) : 0;
-
-    document.getElementById('total-mileage-val').innerText = `${stats.total.toLocaleString()} km`;
-    document.getElementById('ken-mileage-val').innerText = `${stats.ken.toLocaleString()} km (${kenPct}%)`;
-    document.getElementById('terence-mileage-val').innerText = `${stats.terence.toLocaleString()} km (${terencePct}%)`;
-
-    // 渲染里程表格
-    const mileageTbody = document.getElementById('mileage-tbody');
-    mileageTbody.innerHTML = mileageLogs.map(log => `
-      <tr>
-        <td><strong>${log.driver}</strong></td>
-        <td>${log.start}</td>
-        <td>${log.end}</td>
-        <td class="text-right"><strong>${log.mileage} km</strong></td>
-        <td>${log.time}</td>
-      </tr>
-    `).join('');
-
-    // 渲染費用表格（含修復後的金額計算）
-    const expenseTbody = document.getElementById('expense-tbody');
-    expenseTbody.innerHTML = expenseLogs.map(exp => {
-      const kenShare = calculateKenShare(exp, stats);
-      return `
-        <tr>
-          <td>${exp.name}</td>
-          <td class="text-right">$${exp.amount.toLocaleString()}</td>
-          <td class="text-center">${exp.payer}</td>
-          <td class="text-center"><span class="badge">${exp.rule}</span></td>
-          <td class="text-right highlight-column">$${kenShare.toLocaleString()}</td>
-          <td>${exp.time}</td>
-        </tr>
-      `;
-    }).join('');
-  }
-
-  // 頁面載入後自動執行渲染
-  window.onload = render;
-</script>
-
+  </script>
 </body>
 </html>

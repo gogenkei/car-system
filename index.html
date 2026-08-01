@@ -17,7 +17,1120 @@
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
+          colors: {<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>車費里程雲端即時對帳系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: "Avenir Next", "Avenir", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: #f7f5f0;
+        }
+        .mono-font { font-family: "JetBrains Mono", monospace; }
+        .pulse-glow { animation: blinker 2.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0.3; } }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #dcd7cc; border-radius: 4px; }
+        
+        .swipe-item { touch-action: pan-y; }
+    </style>
+</head>
+<body class="text-[#3d3a36] min-h-screen p-4 md:p-12 antialiased bg-gradient-to-br from-[#f7f5f0] via-[#f2efe9] to-[#eae5d9]">
+
+    <!-- 頂部裝飾莫蘭迪線條 -->
+    <div class="max-w-6xl mx-auto h-[3px] bg-gradient-to-r from-[#dcd7cc] via-[#7a6f5d] to-[#c48b71] rounded-full mb-6 opacity-80"></div>
+
+    <header class="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-[#dcd7cc] pb-6 gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-1.5 h-1.5 bg-[#7a6f5d] rounded-full"></span>
+                <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase mono-font">FLEET EXPENSE EARTH V7.3</span>
+            </div>
+            <h1 class="text-xl font-bold text-[#3d3a36] tracking-tight mt-1">智慧車費里程對帳系統</h1>
+        </div>
+        <div class="flex items-center gap-4 flex-wrap sm:flex-nowrap">
+            <div id="cloudStatus" class="flex items-center gap-2 text-xs font-semibold text-stone-400 bg-white/80 border border-[#dcd7cc] px-3 py-1.5 rounded-full shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-stone-300 pulse-glow"></span>
+                <span>SYSTEM INITIALIZING...</span>
+            </div>
+            <button onclick="window.closeCurrentMonth()" class="bg-[#3d3a36] hover:bg-[#2b2926] text-[#f7f5f0] font-medium text-xs px-4 py-2.5 rounded-lg transition-all tracking-wider shadow-sm active:scale-95">
+                結算本月帳目
+            </button>
+        </div>
+    </header>
+
+    <!-- 📊 大盤核心指標區 (指定 4 項卡片順序) -->
+    <section class="max-w-6xl mx-auto mb-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- 卡片 1: 本月里程 -->
+            <div class="bg-white border-t-2 border-t-stone-400 border-x border-b border-[#e6e2d8] p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
+                <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">◆ 1. 本月里程</span>
+                <div class="mt-2 flex flex-col justify-center">
+                    <p id="heroTotalKm" class="text-2xl font-bold tracking-tight text-[#3d3a36] mono-font">0 km</p>
+                    <p id="heroKmBreakdown" class="text-xs font-semibold text-[#7a6f5d] mt-0.5 mono-font">T: 0 km / K: 0 km</p>
+                </div>
+                <span class="text-[10px] text-stone-400 mt-1">雙方累計里程與拆分</span>
+            </div>
+
+            <!-- 卡片 2: 本月充電 -->
+            <div class="bg-white border-t-2 border-t-[#7a6f5d] border-x border-b border-[#e6e2d8] p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
+                <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase">⚡ 2. 本月充電</span>
+                <p id="heroTotalCharging" class="text-2xl font-bold tracking-tight text-[#3d3a36] mt-2 mono-font">$0</p>
+                <span class="text-[10px] text-stone-400 mt-1">獨立計算充電相關費用</span>
+            </div>
+
+            <!-- 卡片 3: 本月雜費 -->
+            <div class="bg-white border-t-2 border-t-stone-400 border-x border-b border-[#e6e2d8] p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
+                <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">💸 3. 本月雜費</span>
+                <p id="heroTotalOtherExpense" class="text-2xl font-bold tracking-tight text-[#3d3a36] mt-2 mono-font">$0</p>
+                <span class="text-[10px] text-stone-400 mt-1">車貸、保險、ETC 與其他雜費</span>
+            </div>
+
+            <!-- 卡片 4: 最終支付方向 -->
+            <div id="heroFinalFlowCard" class="bg-gradient-to-br from-[#3d3a36] via-[#4e473f] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#5c544a] hover:-translate-y-0.5">
+                <span id="heroFinalTitle" class="text-[10px] font-bold tracking-widest text-[#dcd7cc] uppercase">⊙ 4. 最終支付方向</span>
+                <p id="heroFinalAction" class="text-xs font-semibold mt-2 truncate text-[#eae5d9]">計算中...</p>
+                <p id="heroFinalAmount" class="text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-[#eae5d9] to-[#dcd7cc]">$0</p>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- 左側：輸入面板與即時明細 -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- 01 / 里程紀錄控制台 -->
+            <div class="bg-white border border-[#e6e2d8] p-6 rounded-xl shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-[#7a6f5d]"></div>
+                <div class="flex justify-between items-baseline mb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400">01 / 里程接力記錄</h2>
+                    <div class="text-[11px] text-stone-600 bg-[#f7f5f0] border border-[#e6e2d8] px-2.5 py-1 rounded-md mono-font font-medium">
+                        最新儀表：<span id="currentLatestMileage" class="font-bold text-[#7a6f5d]">------</span> km
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-bold">駕駛成員</label>
+                        <select id="mileageUser" class="w-full bg-white border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-700 font-medium focus:outline-none focus:border-[#7a6f5d] focus:ring-2 focus:ring-[#7a6f5d]/10 transition-all cursor-pointer">
+                            <option value="Terence">Terence</option>
+                            <option value="Ken">Ken</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-bold">結束里程 (儀表板數字)</label>
+                        <input type="number" id="endMileage" class="w-full bg-white border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-800 focus:outline-none focus:border-[#7a6f5d] focus:ring-2 focus:ring-[#7a6f5d]/10 transition-all mono-font" placeholder="請輸入公里數">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="window.addMileage()" class="w-full bg-[#7a6f5d] hover:bg-[#665c4d] text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]">
+                            送出里程紀錄
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 02 / 支出費用控制台 -->
+            <div class="bg-white border border-[#e6e2d8] p-6 rounded-xl shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-[#3d3a36]"></div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400">02 / 支出費用與動態拆帳</h2>
+                    <div id="editBadgeContainer" class="hidden">
+                        <span class="bg-[#d4a373] text-white text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">✏️ 正在編輯模式</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-12 gap-4">
+                    <div id="expItemTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-bold">費用項目</label>
+                        <select id="expItemType" onchange="window.onExpenseItemChanged()" class="w-full bg-white border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-700 focus:outline-none focus:border-[#7a6f5d] focus:ring-2 focus:ring-[#7a6f5d]/10 transition-all font-semibold cursor-pointer">
+                            <option value="⚡ 充電">⚡ 充電</option>
+                            <option value="🚗 車貸">🚗 車貸</option>
+                            <option value="🛡️ 保險">🛡️ 保險</option>
+                            <option value="🛣️ ETC">🛣️ ETC</option>
+                            <option value="其他">📝 其他雜費 (手動輸入)</option>
+                        </select>
+                    </div>
+
+                    <div id="customItemWrapper" class="col-span-2 md:col-span-2 hidden transition-all duration-300">
+                        <label class="block text-[11px] text-[#7a6f5d] uppercase tracking-wider mb-1.5 font-bold">雜費事由說明</label>
+                        <input type="text" id="expItemCustom" class="w-full bg-white border border-[#dcd7cc] rounded-lg p-2.5 text-base md:text-sm text-stone-800 focus:outline-none focus:border-[#7a6f5d] focus:ring-2 focus:ring-[#7a6f5d]/10 transition-all" placeholder="項目名稱">
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-bold">金額 (元)</label>
+                        <input type="number" id="expAmount" inputmode="numeric" onkeydown="if(event.key === 'Enter') window.addExpense()" class="w-full bg-white border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-800 focus:outline-none focus:border-[#7a6f5d] focus:ring-2 focus:ring-[#7a6f5d]/10 transition-all mono-font" placeholder="TWD">
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-bold">代墊先付</label>
+                        <select id="expPayUser" class="w-full bg-white border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-700 focus:outline-none focus:border-[#7a6f5d] focus:ring-2 focus:ring-[#7a6f5d]/10 transition-all cursor-pointer">
+                            <option value="Terence">Terence</option>
+                            <option value="Ken">Ken</option>
+                        </select>
+                    </div>
+
+                    <div id="expSplitTypeDiv" class="col-span-2 md:col-span-3 transition-all duration-300">
+                        <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5 font-bold">分攤規則</label>
+                        <select id="expSplitType" class="w-full bg-white border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-700 focus:outline-none focus:border-[#7a6f5d] transition-all cursor-pointer">
+                            <option value="month_mileage">📊 依當月里程比例分擔</option>
+                            <option value="23_13">Terence 2/3 & Ken 1/3</option>
+                            <option value="50_50">50 / 50 平分</option>
+                            <option value="Terence">全歸 Terence 負擔</option>
+                            <option value="Ken">全歸 Ken 負擔</option>
+                            <option value="tire">⚙️ 輪胎耗損比例 (全期制)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-2 md:col-span-2 flex items-end">
+                        <button id="submitExpenseBtn" onclick="window.addExpense()" class="w-full bg-[#3d3a36] hover:bg-[#2b2926] text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]">
+                            送出費用
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 明細列表區 -->
+            <div class="space-y-6">
+                <!-- 里程明細 -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-stone-400">📋 本月接力明細 (最新在最上)</h3>
+                        <div class="flex items-center gap-3">
+                            <button onclick="window.exportVisualReport(true)" class="text-[11px] font-bold text-[#3d3a36] bg-[#eae5d9] hover:bg-[#dcd7cc] px-2.5 py-1 rounded transition-all">📊 視覺化 PDF 報表</button>
+                            <button onclick="window.exportCurrentMonthCSV()" class="text-[11px] font-bold text-[#7a6f5d] hover:text-[#5c544a] underline underline-offset-4 transition-all">📥 Excel</button>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-[#e6e2d8] rounded-xl overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto max-h-60 custom-scrollbar">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-[#f7f5f0] text-stone-400 border-b border-[#e6e2d8] font-semibold uppercase tracking-wider">
+                                        <th class="px-5 py-3.5">成員</th>
+                                        <th class="px-5 py-3.5">起始里程</th>
+                                        <th class="px-5 py-3.5">結束里程</th>
+                                        <th class="px-5 py-3.5 text-right">小計</th>
+                                        <th class="px-5 py-3.5 text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="timelineRows" class="divide-y divide-stone-100 text-stone-700 mono-font"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 支出明細 (手勢操作) -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-stone-400">💸 本月日常費用支出 (<span class="text-[#7a6f5d]">⇄ 左右滑動可編輯/刪除</span>)</h3>
+                    </div>
+                    <div id="expenseCardContainer" class="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
+                        <!-- 動態卡片 -->
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- 右側：數據大盤、歷史摺疊存摺與後台備份 -->
+        <div class="space-y-6">
+            
+            <!-- 里程數據大盤 -->
+            <div class="bg-white border border-[#e6e2d8] p-6 rounded-xl space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2.5">📈 里程數據大盤與耗損</h2>
+                
+                <div class="text-xs text-stone-600 space-y-3 bg-[#f7f5f0]/80 p-4 rounded-xl border border-[#e6e2d8]/60 font-light">
+                    <div class="font-bold text-stone-800 border-b border-stone-200 pb-1.5 mb-1 flex justify-between"><span>本月行駛貢獻</span></div>
+                    <div class="flex justify-between items-center mono-font"><span>Terence：</span><span class="font-semibold text-stone-900" id="monthTkm">0 km</span></div>
+                    <div class="flex justify-between items-center mono-font"><span>Ken：</span><span class="font-semibold text-stone-900" id="monthKkm">0 km</span></div>
+                    
+                    <div class="flex justify-between items-center font-bold text-[#7a6f5d] bg-[#f2efe9] border border-[#dcd7cc] px-2.5 py-1.5 rounded-lg text-[10px] mono-font shadow-sm/5">
+                        <span>📊 當月里程 Ken 佔比：</span><span id="monthRatioKText" class="text-xs font-black">0.0%</span>
+                    </div>
+
+                    <div class="font-bold text-stone-800 border-b border-stone-200 pb-1.5 pt-2 mb-1 flex justify-between"><span>歷史至今全期大盤</span></div>
+                    <div class="flex justify-between mono-font"><span>Terence 累計：</span><span class="text-stone-900 font-medium"><span id="allTkm">0</span> km (<span id="allRatioT">0</span>%)</span></div>
+                    <div class="flex justify-between mono-font"><span>Ken 累計：</span><span class="text-stone-900 font-medium"><span id="allKkm">0</span> km (<span id="allRatioK">0</span>%)</span></div>
+
+                    <div class="font-bold text-stone-800 border-b border-stone-200 pb-1.5 pt-2 mb-1 flex justify-between"><span>⚙️ 當前輪胎獨立壽命區間</span></div>
+                    <div class="flex justify-between mono-font"><span>Terence 本胎：</span><span class="text-stone-900 font-medium"><span id="tyreTkm">0</span> km</span></div>
+                    <div class="flex justify-between mono-font"><span>Ken 本胎：</span><span class="text-slate-900 font-medium"><span id="tyreKkm">0</span> km</span></div>
+                    <div class="flex justify-between items-center font-bold text-stone-700 bg-stone-200/60 px-2.5 py-1.5 rounded-lg text-[10px] mt-1.5 mono-font">
+                        <span>💡 輪胎損耗 Ken 應拆帳比：</span><span id="tyreRatioKText" class="text-xs font-black">0.0%</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-stone-100 pt-3 space-y-1.5 text-xs font-light text-stone-500 mono-font">
+                    <div class="flex justify-between"><span>Terence 當月代墊總額:</span><span id="outT" class="font-semibold text-stone-800">$0</span></div>
+                    <div class="flex justify-between"><span>Ken 當月代墊總額:</span><span id="outK" class="font-semibold text-stone-800">$0</span></div>
+                </div>
+            </div>
+
+            <!-- 📂 歷史已封存存摺 -->
+            <div class="bg-white border border-[#e6e2d8] rounded-xl shadow-sm overflow-hidden transition-all duration-300">
+                <button onclick="window.toggleHistoryPanel()" class="w-full bg-[#f7f5f0]/60 hover:bg-[#f7f5f0] px-5 py-4 flex items-center justify-between border-b border-[#e6e2d8]/60 transition-colors focus:outline-none">
+                    <div class="flex items-center gap-2">
+                        <span class="text-stone-400 text-xs">📂</span>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-stone-500">歷史已封存存摺</h3>
+                    </div>
+                    <svg id="historyChevron" class="w-4 h-4 text-stone-400 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="historyCollapseContent" class="hidden p-4 space-y-3 max-h-64 overflow-y-auto custom-scrollbar bg-[#f7f5f0]/30">
+                    <!-- 歷史封存卡片 -->
+                </div>
+            </div>
+
+            <!-- 後台雲端基礎設施 -->
+            <div class="bg-gradient-to-b from-[#3d3a36] to-[#2b2926] text-stone-400 p-5 rounded-xl space-y-4 shadow-lg border border-[#4e473f]">
+                <h3 class="text-[10px] font-bold text-[#dcd7cc] tracking-widest uppercase mono-font">🔒 CLOUD INFRASTRUCTURE</h3>
+                <button onclick="window.downloadSystemBackup()" class="w-full bg-[#4e473f]/80 hover:bg-[#4e473f] text-stone-200 text-xs font-medium py-2.5 px-3 rounded-lg transition-all text-center block border border-[#5c544a] shadow-inner">
+                    下載全系統雲端資料備份 (.json)
+                </button>
+                <div class="border-t border-[#4e473f] pt-3">
+                    <label class="block text-[10px] text-stone-400 font-bold tracking-wider uppercase mb-1.5">📤 強制上傳 JSON 覆蓋雲端：</label>
+                    <input type="file" id="importFile" onchange="window.importSystemBackup(event)" class="text-xs text-stone-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border file:border-stone-600 file:text-xs file:font-medium file:bg-[#4e473f] file:text-stone-300 hover:file:bg-[#5c544a] w-full cursor-pointer">
+                </div>
+                <button onclick="window.hardResetSystem()" class="w-full text-[10px] text-stone-500 hover:text-[#c48b71] font-medium transition-colors text-left pt-1 block">⚠️ 重設雲端資料庫 (還原至原始 0 狀態)</button>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCmmNy3jnq1T0nG9BWSd6AiolvNcopFGM",
+            authDomain: "track-car-spending.firebaseapp.com",
+            projectId: "track-car-spending",
+            storageBucket: "track-car-spending.firebasestorage.app",
+            messagingSenderId: "706270939073",
+            appId: "1:706270939073:web:7df65a4db4f02f6b0f8fa0",
+            measurementId: "G-2VZFZ00LJR"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const docRef = doc(db, "car_sharing_system", "v5_database_premium");
+
+        let systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
+        let mileageList = []; let expenseList = []; let historyMonths = []; let currentMonthCalculatedData = {};
+        let editingExpenseIndex = null;
+
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const cloudData = docSnap.data();
+                systemState = cloudData.systemState || { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 };
+                mileageList = cloudData.mileageList || []; expenseList = cloudData.expenseList || []; historyMonths = cloudData.historyMonths || [];
+                document.getElementById('cloudStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-600 pulse-glow"></span><span class="text-emerald-700 font-black tracking-wider text-[10px] mono-font">LIVE SYNCED</span>`;
+            } else { updateCloud(); }
+            calculateAndRender();
+        }, (error) => {
+            document.getElementById('cloudStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span class="text-rose-400 font-bold text-[10px] mono-font">ERROR</span>`;
+        });
+
+        async function updateCloud() {
+            try { await setDoc(docRef, { systemState, mileageList, expenseList, historyMonths }); } catch (err) {}
+        }
+
+        window.toggleHistoryPanel = function() {
+            const content = document.getElementById('historyCollapseContent');
+            const chevron = document.getElementById('historyChevron');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        };
+
+        window.onExpenseItemChanged = function() {
+            const type = document.getElementById('expItemType').value;
+            const wrapper = document.getElementById('customItemWrapper');
+            const typeDiv = document.getElementById('expItemTypeDiv');
+            const splitSelect = document.getElementById('expSplitType');
+            
+            splitSelect.disabled = false;
+            splitSelect.className = "w-full bg-white border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-700 focus:outline-none focus:border-[#7a6f5d] focus:ring-2 focus:ring-[#7a6f5d]/10 transition-all cursor-pointer";
+
+            if (type === '⚡ 充電') {
+                wrapper.classList.add('hidden');
+                typeDiv.className = "col-span-2 md:col-span-3";
+                splitSelect.value = "month_mileage";
+                splitSelect.disabled = true;
+                splitSelect.className = "w-full bg-[#f7f5f0] border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-400 focus:outline-none transition-all cursor-not-allowed";
+            } else if (type === '🚗 車貸' || type === '🛡️ 保險') {
+                wrapper.classList.add('hidden');
+                typeDiv.className = "col-span-2 md:col-span-3";
+                splitSelect.value = "23_13";
+                splitSelect.disabled = true;
+                splitSelect.className = "w-full bg-[#f7f5f0] border border-[#e6e2d8] rounded-lg p-2.5 text-base md:text-sm text-stone-400 focus:outline-none transition-all cursor-not-allowed";
+            } else if (type === '🛣️ ETC') {
+                wrapper.classList.add('hidden');
+                typeDiv.className = "col-span-2 md:col-span-3";
+            } else if (type === '其他') {
+                wrapper.classList.remove('hidden');
+                typeDiv.className = "col-span-2 md:col-span-2";
+            }
+        };
+
+        function calculateAndRender() {
+            let currentLatest = systemState.initialMileage;
+            let mTkm = 0, mKkm = 0;
+
+            mileageList.forEach((m) => {
+                if (m.user === 'Terence') mTkm += m.diff;
+                if (m.user === 'Ken') mKkm += m.diff;
+                currentLatest = m.end;
+            });
+
+            const timelineRows = document.getElementById('timelineRows');
+            timelineRows.innerHTML = '';
+            for (let i = mileageList.length - 1; i >= 0; i--) {
+                const m = mileageList[i];
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-[#f7f5f0]/80 transition-colors duration-150';
+                
+                const userBadge = m.user === 'Terence' 
+                    ? '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-stone-100 text-stone-700 border border-stone-200">Terence</span>' 
+                    : '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#f2efe9] text-[#7a6f5d] border border-[#dcd7cc]">Ken</span>';
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3.5">${userBadge}</td>
+                    <td class="px-5 py-3.5 text-stone-400 font-light">${m.start}</td>
+                    <td class="px-5 py-3.5 font-medium text-stone-800">${m.end}</td>
+                    <td class="px-5 py-3.5 text-right font-bold text-stone-900">${m.diff} km</td>
+                    <td class="px-5 py-3.5 text-center"><button onclick="window.deleteMileage(${i})" class="text-stone-400 hover:text-[#c48b71] text-[11px] underline transition-colors">刪除</button></td>
+                `;
+                timelineRows.appendChild(tr);
+            }
+
+            const monthTotalKm = mTkm + mKkm;
+            const monthRatioK = monthTotalKm > 0 ? (mKkm / monthTotalKm) : 0.5; 
+            document.getElementById('monthRatioKText').innerText = `${(monthRatioK * 100).toFixed(1)}%`;
+
+            const allTkm = systemState.historyTkm + mTkm;
+            const allKkm = systemState.historyKkm + mKkm;
+            const totalAllKm = allTkm + allKkm;
+            const allRatioT = totalAllKm > 0 ? (allTkm / totalAllKm) : 0;
+            const allRatioK = totalAllKm > 0 ? (allKkm / totalAllKm) : 0;
+
+            const baseT = systemState.tyreBaseTkm || 0; const baseK = systemState.tyreBaseKkm || 0;
+            const tyreTkm = Math.max(0, allTkm - baseT); const tyreKkm = Math.max(0, allKkm - baseK);
+            const tyreTotalKm = tyreTkm + tyreKkm;
+            const tyreRatioK = tyreTotalKm > 0 ? (tyreKkm / tyreTotalKm) : 0;
+
+            document.getElementById('heroTotalKm').innerText = `${monthTotalKm.toLocaleString()} km`;
+            document.getElementById('heroKmBreakdown').innerText = `T: ${mTkm.toLocaleString()} km / K: ${mKkm.toLocaleString()} km`;
+            
+            document.getElementById('currentLatestMileage').innerText = currentLatest.toLocaleString();
+            document.getElementById('monthTkm').innerText = `${mTkm} km`; document.getElementById('monthKkm').innerText = `${mKkm} km`;
+            document.getElementById('allTkm').innerText = allTkm.toLocaleString(); document.getElementById('allKkm').innerText = allKkm.toLocaleString();
+            document.getElementById('allRatioT').innerText = (allRatioT * 100).toFixed(1); document.getElementById('allRatioK').innerText = (allRatioK * 100).toFixed(1);
+            document.getElementById('tyreTkm').innerText = tyreTkm.toLocaleString(); document.getElementById('tyreKkm').innerText = tyreKkm.toLocaleString();
+            document.getElementById('tyreRatioKText').innerText = `${(tyreRatioK * 100).toFixed(1)}%`;
+
+            let tPaid = 0, kPaid = 0, totalExp = 0, kResponsibility = 0;
+            let totalCharging = 0;
+            let detailedExpensesWithShare = [];
+
+            expenseList.forEach((e) => {
+                let ruleText = ''; let computedKenShare = 0;
+                totalExp += e.amount;
+                
+                if (e.item && e.item.includes('充電')) {
+                    totalCharging += e.amount;
+                }
+
+                if (e.splitType === '50_50') { ruleText = '50/50平分'; computedKenShare = e.amount * 0.5; } 
+                else if (e.splitType === 'month_mileage') { ruleText = `📊 里程比 (${(monthRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * monthRatioK; }
+                else if (e.splitType === '23_13') { ruleText = 'T 2/3 & K 1/3'; computedKenShare = e.amount * (1 / 3); } 
+                else if (e.splitType === 'Terence') { ruleText = '全歸 Terence'; computedKenShare = 0; } 
+                else if (e.splitType === 'Ken') { ruleText = '全歸 Ken'; computedKenShare = e.amount; } 
+                else if (e.splitType === 'tire') { ruleText = `⚙️ 輪胎比 (${(tyreRatioK * 100).toFixed(1)}%)`; computedKenShare = e.amount * tyreRatioK; }
+
+                computedKenShare = Math.round(computedKenShare);
+                if (e.user === 'Terence') tPaid += e.amount;
+                if (e.user === 'Ken') kPaid += e.amount;
+                kResponsibility += computedKenShare;
+                detailedExpensesWithShare.push({ item: e.item, amount: e.amount, payer: e.user, rule: ruleText, kenShare: computedKenShare, splitType: e.splitType });
+            });
+
+            const totalOtherExpense = totalExp - totalCharging;
+
+            const cardContainer = document.getElementById('expenseCardContainer');
+            cardContainer.innerHTML = '';
+
+            if (expenseList.length === 0) {
+                cardContainer.innerHTML = `<p class="text-xs text-stone-400 italic py-4 text-center">當月尚無日常費用支出紀錄。</p>`;
+            }
+
+            for (let i = expenseList.length - 1; i >= 0; i--) {
+                const e = expenseList[i];
+                const calc = detailedExpensesWithShare[i];
+                
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = "relative overflow-hidden rounded-xl bg-white border border-[#e6e2d8] shadow-sm swipe-item select-none";
+                cardWrapper.setAttribute('data-index', i);
+
+                const payerBadge = e.user === 'Terence' 
+                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200">Terence 代墊</span>' 
+                    : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#f2efe9] text-[#7a6f5d] border border-[#dcd7cc]">Ken 代墊</span>';
+
+                cardWrapper.innerHTML = `
+                    <div class="absolute inset-0 flex justify-between text-xs font-bold text-white tracking-widest">
+                        <div class="bg-[#8fa89b] flex items-center pl-6 justify-start w-1/2">✏️ 右滑進入編輯</div>
+                        <div class="bg-[#c48b71] flex items-center pr-6 justify-end w-1/2">🗑️ 左滑立刻刪除</div>
+                    </div>
+                    <div class="relative bg-white p-4 flex items-center justify-between transition-transform duration-200 ease-out pointer-events-none inner-content">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-stone-900 text-sm">${e.item}</span>
+                                ${payerBadge}
+                            </div>
+                            <div class="text-[11px] text-stone-400 font-light">
+                                規則：${calc.rule} <span class="text-[#7a6f5d] font-semibold ml-1">(Ken分擔: $${calc.kenShare.toLocaleString()})</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-black text-stone-900 mono-font">$${e.amount.toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+                
+                cardContainer.appendChild(cardWrapper);
+                bindSwipeGestures(cardWrapper, i);
+            }
+
+            // 更新 4 大卡片 (里程、充電、雜費、最終方向)
+            document.getElementById('heroTotalCharging').innerText = `$${totalCharging.toLocaleString()}`;
+            document.getElementById('heroTotalOtherExpense').innerText = `$${totalOtherExpense.toLocaleString()}`;
+
+            document.getElementById('outT').innerText = `$${tPaid.toLocaleString()}`;
+            document.getElementById('outK').innerText = `$${kPaid.toLocaleString()}`;
+
+            const netFlow = kResponsibility - kPaid;
+            const heroCard = document.getElementById('heroFinalFlowCard');
+            const heroTitle = document.getElementById('heroFinalTitle');
+            const heroAction = document.getElementById('heroFinalAction');
+            const heroAmount = document.getElementById('heroFinalAmount');
+
+            let finalActionStr = "";
+            
+            if (Math.round(netFlow) === 0) {
+                heroCard.className = "bg-white border-t-2 border-t-[#8fa89b] border-x border-b border-[#e6e2d8] p-5 rounded-xl flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-md";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-stone-400 uppercase";
+                heroAction.className = "text-xs font-semibold text-[#8fa89b] mt-2 truncate";
+                heroAmount.className = "text-3xl font-black tracking-tight text-stone-300 mt-1 mono-font";
+                heroAction.innerText = "雙方帳目平衡 BALANCE"; heroAmount.innerText = "$0"; finalActionStr = "雙方帳目平衡";
+            } else if (netFlow > 0) {
+                heroCard.className = "bg-gradient-to-br from-[#3d3a36] via-[#4e473f] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#5c544a] text-white hover:-translate-y-0.5";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-[#dcd7cc] uppercase";
+                heroAction.className = "text-xs font-medium text-[#eae5d9] mt-2 truncate";
+                heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-[#eae5d9] to-[#dcd7cc]";
+                heroAction.innerText = "🙋‍♂️ Ken 應匯款給 Terence";
+                heroAmount.innerText = `$${Math.round(netFlow).toLocaleString()}`;
+                finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
+            } else {
+                heroCard.className = "bg-gradient-to-br from-[#3d3a36] via-[#464e46] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#4e544e] text-white hover:-translate-y-0.5";
+                heroTitle.className = "text-[10px] font-bold tracking-widest text-[#dcd7cc] uppercase";
+                heroAction.className = "text-xs font-medium text-[#eae5d9] mt-2 truncate";
+                heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-[#eae5d9] to-[#dcd7cc]";
+                heroAction.innerText = "🙋‍♂️ Terence 應匯款給 Ken";
+                heroAmount.innerText = `$${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+                finalActionStr = `Terence 應匯款給 Ken $${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+            }
+
+            currentMonthCalculatedData = {
+                mTkm, mKkm, allTkm, allKkm, allRatioK, tyreTkm, tyreKkm, tyreRatioK, baseT, baseK,
+                tPaid, kPaid, totalCharging, totalOtherExpense, totalExp, kResponsibility, netFlow, finalActionStr,
+                mileages: JSON.parse(JSON.stringify(mileageList)), expenses: expenseList
+            };
+            renderHistoryMonths();
+        }
+
+        function bindSwipeGestures(el, index) {
+            const inner = el.querySelector('.inner-content');
+            let startX = 0; let currentX = 0; let isDragging = false;
+            const threshold = 100;
+
+            function pullStart(e) {
+                isDragging = true;
+                startX = e.touches ? e.touches[0].clientX : e.clientX;
+                inner.classList.remove('transition-transform');
+            }
+
+            function pullMove(e) {
+                if (!isDragging) return;
+                currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                let diffX = currentX - startX;
+                
+                if (diffX > 140) diffX = 140;
+                if (diffX < -140) diffX = -140;
+                
+                inner.style.transform = `translateX(${diffX}px)`;
+            }
+
+            function pullEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                inner.classList.add('transition-transform');
+                const finalDiff = currentX - startX;
+
+                if (startX === 0 || currentX === 0) {
+                    resetPos(); return;
+                }
+
+                if (finalDiff < -threshold) {
+                    window.deleteExpense(index);
+                } else if (finalDiff > threshold) {
+                    window.enterEditExpenseMode(index);
+                    resetPos();
+                } else {
+                    resetPos();
+                }
+                startX = 0; currentX = 0;
+            }
+
+            function resetPos() {
+                inner.style.transform = 'translateX(0px)';
+            }
+
+            el.addEventListener('touchstart', pullStart, { passive: true });
+            el.addEventListener('touchmove', pullMove, { passive: true });
+            el.addEventListener('touchend', pullEnd);
+
+            el.addEventListener('mousedown', pullStart);
+            window.addEventListener('mousemove', pullMove);
+            window.addEventListener('mouseup', pullEnd);
+        }
+
+        window.enterEditExpenseMode = function(index) {
+            editingExpenseIndex = index;
+            const exp = expenseList[index];
+
+            const typeSelect = document.getElementById('expItemType');
+            const customInput = document.getElementById('expItemCustom');
+            const amountInput = document.getElementById('expAmount');
+            const payUserSelect = document.getElementById('expPayUser');
+            const splitSelect = document.getElementById('expSplitType');
+
+            amountInput.value = exp.amount;
+            payUserSelect.value = exp.user;
+
+            if (['⚡ 充電', '🚗 車貸', '🛡️ 保險', '🛣️ ETC'].includes(exp.item)) {
+                typeSelect.value = exp.item;
+            } else {
+                typeSelect.value = '其他';
+                customInput.value = exp.item;
+            }
+
+            window.onExpenseItemChanged();
+            splitSelect.value = exp.splitType;
+
+            document.getElementById('editBadgeContainer').classList.remove('hidden');
+            document.getElementById('submitExpenseBtn').innerText = "💾 儲存修改項目";
+            document.getElementById('submitExpenseBtn').className = "w-full bg-[#d4a373] hover:bg-[#c29263] text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]";
+            
+            document.getElementById('expItemType').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        function renderHistoryMonths() {
+            const collapseContainer = document.getElementById('historyCollapseContent');
+            
+            if (historyMonths.length === 0) {
+                collapseContainer.innerHTML = '<p class="text-xs text-stone-400 italic py-2 text-center">尚無歷史封存數據。</p>'; 
+                return;
+            }
+            collapseContainer.innerHTML = '';
+            
+            historyMonths.slice().reverse().forEach((month, revIdx) => {
+                const actualIdx = historyMonths.length - 1 - revIdx;
+                const card = document.createElement('div');
+                card.className = "bg-white border border-[#e6e2d8] p-3.5 rounded-xl space-y-2 hover:border-[#7a6f5d] transition-colors shadow-sm text-xs";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-stone-100 pb-1.5">
+                        <span class="font-bold text-stone-800">📅 ${month.label}</span>
+                        <div class="flex gap-2">
+                            <button onclick="window.exportVisualReport(false, ${actualIdx})" class="text-[11px] bg-[#3d3a36] text-white px-2 py-0.5 rounded font-bold hover:bg-[#2b2926] transition-all">📊 圖表</button>
+                            <button onclick="window.exportHistoricalCSV(${actualIdx})" class="text-[11px] text-[#7a6f5d] hover:text-[#5c544a] font-bold underline underline-offset-2">Excel</button>
+                            <button onclick="window.deleteHistoryMonth(${actualIdx})" class="text-[11px] text-stone-400 hover:text-[#c48b71]">刪除</button>
+                        </div>
+                    </div>
+                    <div class="text-[11px] text-stone-500 space-y-0.5 font-light mono-font">
+                        <div>里程: Terence:${month.snapshot.mTkm || 0}km / Ken:${month.snapshot.mKkm || 0}km</div>
+                        <div class="text-stone-800 font-semibold mt-1 font-sans">結果：${month.snapshot.finalActionStr}</div>
+                    </div>
+                `;
+                collapseContainer.appendChild(card);
+            });
+        }
+
+        window.addMileage = async function() {
+            const userSelect = document.getElementById('mileageUser');
+            const user = userSelect.value;
+            const end = parseInt(document.getElementById('endMileage').value);
+            const lastEntry = mileageList[mileageList.length - 1];
+            const start = lastEntry ? lastEntry.end : systemState.initialMileage;
+            if (isNaN(end)) return alert('請輸入里程數！');
+            if (end <= start) return alert(`輸入里程必須大於最新里程 (${start})！`);
+            
+            const nowTimestampStr = new Date().toLocaleString('zh-TW');
+            mileageList.push({ user, start, end, diff: end - start, createdAt: nowTimestampStr });
+            
+            await updateCloud(); 
+            document.getElementById('endMileage').value = '';
+            userSelect.value = (user === 'Terence') ? 'Ken' : 'Terence';
+        };
+
+        window.addExpense = async function() {
+            const type = document.getElementById('expItemType').value;
+            let item = type;
+            
+            if (type === '其他') {
+                item = document.getElementById('expItemCustom').value.trim();
+                if (!item) return alert('請填寫其他雜費的事由說明！');
+            }
+            
+            const amount = parseInt(document.getElementById('expAmount').value);
+            const user = document.getElementById('expPayUser').value;
+            const splitType = document.getElementById('expSplitType').value;
+
+            if (!amount || amount <= 0) return alert('請輸入正確的費用金額！');
+            const nowTimestampStr = new Date().toLocaleString('zh-TW');
+            
+            const expenseData = { item, amount, user, splitType, createdAt: nowTimestampStr };
+
+            if (editingExpenseIndex !== null) {
+                expenseList[editingExpenseIndex] = expenseData;
+                editingExpenseIndex = null;
+                document.getElementById('editBadgeContainer').classList.add('hidden');
+                document.getElementById('submitExpenseBtn').innerText = "送出費用";
+                document.getElementById('submitExpenseBtn').className = "w-full bg-[#3d3a36] hover:bg-[#2b2926] text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]";
+            } else {
+                expenseList.push(expenseData);
+            }
+            
+            await updateCloud();
+            
+            document.getElementById('expItemCustom').value = ''; 
+            document.getElementById('expAmount').value = '';
+            document.getElementById('expItemType').value = '⚡ 充電';
+            window.onExpenseItemChanged();
+        };
+
+        window.deleteMileage = async function(idx) {
+            if(confirm('確定刪除此里程？系統將自動重構接力鏈並同步。')) {
+                mileageList.splice(idx, 1);
+                let current = systemState.initialMileage;
+                mileageList.forEach(m => { m.start = current; m.end = current + m.diff; current = m.end; });
+                await updateCloud();
+            }
+        };
+
+        window.deleteExpense = async function(idx) { 
+            if(confirm(`確定要刪除第 ${expenseList.length - idx} 筆支出項目（${expenseList[idx].item}: $${expenseList[idx].amount}）嗎？`)) {
+                if (editingExpenseIndex === idx) {
+                    editingExpenseIndex = null;
+                    document.getElementById('editBadgeContainer').classList.add('hidden');
+                    document.getElementById('submitExpenseBtn').innerText = "送出費用";
+                    document.getElementById('submitExpenseBtn').className = "w-full bg-[#3d3a36] hover:bg-[#2b2926] text-white rounded-lg p-2.5 text-xs font-bold tracking-wider transition-all shadow-sm active:scale-[0.98]";
+                }
+                expenseList.splice(idx, 1); 
+                await updateCloud(); 
+            } else {
+                calculateAndRender();
+            }
+        };
+
+        window.closeCurrentMonth = async function() {
+            if (mileageList.length === 0 && expenseList.length === 0) return alert('當前月份尚無資料！');
+            const currentLatest = mileageList.length > 0 ? mileageList[mileageList.length - 1].end : systemState.initialMileage;
+            const monthLabel = prompt("請輸入本次結算的月份名稱標籤：", `${new Date().getFullYear()}年${new Date().getMonth() + 1}月`);
+            if (!monthLabel || monthLabel.trim() === "") return;
+
+            if (confirm(`確定要結算並永久將帳目推往雲端歷史區嗎？`)) {
+                const hasTyreExpense = expenseList.some(e => e.splitType === 'tire');
+                historyMonths.push({ label: monthLabel.trim(), snapshot: JSON.parse(JSON.stringify(currentMonthCalculatedData)), timestamp: Date.now() });
+                systemState.historyTkm += currentMonthCalculatedData.mTkm;
+                systemState.historyKkm += currentMonthCalculatedData.mKkm;
+                systemState.initialMileage = currentLatest;
+                if (hasTyreExpense) { systemState.tyreBaseTkm = systemState.historyTkm; systemState.tyreBaseKkm = systemState.historyKkm; }
+                mileageList = []; expenseList = []; await updateCloud();
+                alert(`🎉 【${monthLabel}】已成功結算安全封存。`);
+            }
+        };
+
+        window.deleteHistoryMonth = async function(index) {
+            if (confirm(`確定要刪除歷史封存備份嗎？`)) { historyMonths.splice(index, 1); await updateCloud(); }
+        };
+
+        // 📊 視覺化 PDF / 列印報表 (完全動態動態重算版，支援所有歷史封存檔)
+        window.exportVisualReport = function(isCurrentMonth, historyIdx = null) {
+            let data = isCurrentMonth ? currentMonthCalculatedData : historyMonths[historyIdx].snapshot;
+            let label = isCurrentMonth ? "本月即時" : historyMonths[historyIdx].label;
+
+            const printWin = window.open('', '_blank');
+            if (!printWin) {
+                alert("請允許開啟快顯視窗（Pop-up）以下載/檢視視覺化圖表報表！");
+                return;
+            }
+
+            // 1. 徹底掃描該月份封存的原始支出明細，重新計算各項總額（相容所有歷史格式）
+            let expCategories = { '⚡ 充電': 0, '🚗 車貸': 0, '🛡️ 保險': 0, '🛣️ ETC': 0, '其他': 0 };
+            let totalExp = 0;
+            let totalCharging = 0;
+            let tPaid = 0;
+            let kPaid = 0;
+            let kResponsibility = 0;
+
+            // 計算里程
+            let mTkm = 0, mKkm = 0;
+            (data.mileages || []).forEach(m => {
+                const diff = Number(m.diff) || 0;
+                if (m.user === 'Terence') mTkm += diff;
+                if (m.user === 'Ken') mKkm += diff;
+            });
+            const monthTotalKm = (mTkm + mKkm) || ((data.mTkm || 0) + (data.mKkm || 0));
+
+            // 計算費用與分類
+            (data.expenses || []).forEach(e => {
+                const amt = Number(e.amount) || 0;
+                const payer = e.user || e.payer;
+                const itemStr = e.item || '';
+
+                totalExp += amt;
+
+                if (payer === 'Terence') tPaid += amt;
+                if (payer === 'Ken') kPaid += amt;
+
+                if (itemStr.includes('充電')) {
+                    expCategories['⚡ 充電'] += amt;
+                    totalCharging += amt;
+                } else if (itemStr.includes('車貸')) {
+                    expCategories['🚗 車貸'] += amt;
+                } else if (itemStr.includes('保險')) {
+                    expCategories['🛡️ 保險'] += amt;
+                } else if (itemStr.includes('ETC')) {
+                    expCategories['🛣️ ETC'] += amt;
+                } else {
+                    expCategories['其他'] += amt;
+                }
+
+                if (e.kenShare !== undefined) {
+                    kResponsibility += Number(e.kenShare);
+                } else {
+                    if (e.splitType === '50_50') kResponsibility += amt * 0.5;
+                    else if (e.splitType === '23_13') kResponsibility += amt * (1 / 3);
+                    else if (e.splitType === 'Ken') kResponsibility += amt;
+                    else if (e.splitType === 'month_mileage' && monthTotalKm > 0) kResponsibility += amt * (mKkm / monthTotalKm);
+                }
+            });
+
+            // 備回機制
+            if (tPaid === 0 && data.tPaid) tPaid = data.tPaid;
+            if (kPaid === 0 && data.kPaid) kPaid = data.kPaid;
+            kResponsibility = Math.round(kResponsibility || data.kResponsibility || 0);
+
+            const totalOtherExpense = totalExp - totalCharging;
+            const tResponsibility = Math.round(totalExp - kResponsibility);
+            const tNetDiff = tPaid - tResponsibility;
+            const kNetDiff = kPaid - kResponsibility;
+            const netFlow = kResponsibility - kPaid;
+
+            let finalActionStr = data.finalActionStr;
+            if (!finalActionStr) {
+                if (Math.round(netFlow) === 0) finalActionStr = "雙方帳目平衡";
+                else if (netFlow > 0) finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
+                else finalActionStr = `Terence 應匯款給 Ken $${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+            }
+
+            const reportHtml = `
+            <!DOCTYPE html>
+            <html lang="zh-TW">
+            <head>
+                <meta charset="UTF-8">
+                <title>${label} 車費與里程對帳圖表報表</title>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+                <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <style>
+                    body { font-family: 'Avenir Next', 'Plus Jakarta Sans', sans-serif; background-color: #ffffff; color: #3d3a36; }
+                    .mono-font { font-family: 'JetBrains Mono', monospace; }
+                    @media print {
+                        .no-print { display: none !important; }
+                        .page-break { page-break-after: always; break-after: page; }
+                        body { background: white; padding: 0; }
+                    }
+                </style>
+            </head>
+            <body class="p-8 max-w-5xl mx-auto">
+                <div class="no-print mb-6 p-4 bg-[#f7f5f0] border border-[#dcd7cc] rounded-xl flex justify-between items-center shadow-sm">
+                    <div>
+                        <h2 class="font-bold text-stone-800">📄 視覺化對帳報表預覽</h2>
+                        <p class="text-xs text-stone-500">建議選擇「另存為 PDF」或直接列印。第一頁為數據看板，第二頁為歷史明細紀錄。</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-[#3d3a36] text-white px-5 py-2.5 rounded-lg text-xs font-bold hover:bg-[#2b2926] shadow transition-all">
+                        🖨️ 列印 / 另存為 PDF
+                    </button>
+                </div>
+
+                <!-- PAGE 1: DASHBOARD -->
+                <div class="page-break pb-8">
+                    <div class="border-b-2 border-[#7a6f5d] pb-4 mb-6 flex justify-between items-end">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase mono-font">FLEET EXPENSE DASHBOARD</span>
+                            <h1 class="text-2xl font-bold text-[#3d3a36]">${label} 車費里程視覺化對帳看板</h1>
+                        </div>
+                        <div class="text-right text-xs text-stone-400 mono-font">
+                            報表生成時間：${new Date().toLocaleString('zh-TW')}
+                        </div>
+                    </div>
+
+                    <!-- 4 大指標卡片 (嚴格依序：本月里程、本月充電、本月雜費、最終支付方向) -->
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase">◆ 1. 本月里程</span>
+                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">${monthTotalKm.toLocaleString()} km</p>
+                            <p class="text-[11px] text-[#7a6f5d] mt-1 font-semibold mono-font">T: ${mTkm.toLocaleString()} / K: ${mKkm.toLocaleString()}</p>
+                        </div>
+                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
+                            <span class="text-[10px] font-bold text-[#7a6f5d] uppercase">⚡ 2. 本月充電</span>
+                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">$${totalCharging.toLocaleString()}</p>
+                            <p class="text-[11px] text-stone-400 mt-1">獨立計算充電相關金額</p>
+                        </div>
+                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase">💸 3. 本月雜費</span>
+                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">$${totalOtherExpense.toLocaleString()}</p>
+                            <p class="text-[11px] text-stone-400 mt-1">包含車貸、保險、ETC等雜費</p>
+                        </div>
+                        <div class="border border-[#3d3a36] p-4 rounded-xl bg-[#3d3a36] text-white">
+                            <span class="text-[10px] font-bold text-[#dcd7cc] uppercase">⊙ 4. 最終支付方向</span>
+                            <p class="text-sm font-bold text-white mt-1 truncate">${finalActionStr}</p>
+                            <p class="text-[10px] text-[#eae5d9] mt-1">當月對帳淨流向金額</p>
+                        </div>
+                    </div>
+
+                    <!-- 有效圖表區 (僅保留 2 個核心圖表) -->
+                    <div class="grid grid-cols-2 gap-6 mb-6">
+                        <div class="border border-[#e6e2d8] p-5 rounded-xl bg-white shadow-sm">
+                            <h3 class="text-xs font-bold text-stone-600 uppercase mb-3 border-b border-stone-100 pb-2">📊 當月里程駕駛貢獻 (km)</h3>
+                            <div class="h-48 flex justify-center items-center">
+                                <canvas id="chartMileage"></canvas>
+                            </div>
+                        </div>
+                        <div class="border border-[#e6e2d8] p-5 rounded-xl bg-white shadow-sm">
+                            <h3 class="text-xs font-bold text-stone-600 uppercase mb-3 border-b border-stone-100 pb-2">🏷️ 費用項目分類拆解 ($)</h3>
+                            <div class="h-48">
+                                <canvas id="chartExpenses"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 雙方對帳核算清算總表 -->
+                    <div class="border border-[#e6e2d8] rounded-xl p-5 bg-white shadow-sm">
+                        <h3 class="text-xs font-bold text-stone-700 uppercase mb-3 border-b border-stone-100 pb-2.5 flex justify-between items-center">
+                            <span>⚖️ 雙方對帳核算清算總表</span>
+                            <span class="text-[10px] font-normal text-stone-400 font-sans">（先付代墊額 vs 依規分擔金額對比）</span>
+                        </h3>
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-[#f7f5f0] text-stone-500 font-semibold border-b border-[#e6e2d8]">
+                                <tr>
+                                    <th class="p-2.5">成員</th>
+                                    <th class="p-2.5 text-right">當月先付代墊金額</th>
+                                    <th class="p-2.5 text-right">依規則應分擔金額</th>
+                                    <th class="p-2.5 text-right">淨結算狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#e6e2d8] mono-font text-stone-700">
+                                <tr>
+                                    <td class="p-2.5 font-bold text-stone-800 font-sans">Terence</td>
+                                    <td class="p-2.5 text-right font-medium">$${tPaid.toLocaleString()}</td>
+                                    <td class="p-2.5 text-right font-medium">$${tResponsibility.toLocaleString()}</td>
+                                    <td class="p-2.5 text-right font-bold ${tNetDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+                                        ${tNetDiff >= 0 ? `應收取 $${tNetDiff.toLocaleString()}` : `應支付 $${Math.abs(tNetDiff).toLocaleString()}`}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-[#7a6f5d] font-sans">Ken</td>
+                                    <td class="p-2.5 text-right font-medium">$${kPaid.toLocaleString()}</td>
+                                    <td class="p-2.5 text-right font-medium">$${kResponsibility.toLocaleString()}</td>
+                                    <td class="p-2.5 text-right font-bold ${kNetDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+                                        ${kNetDiff >= 0 ? `應收取 $${kNetDiff.toLocaleString()}` : `應支付 $${Math.abs(kNetDiff).toLocaleString()}`}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PAGE 2: DETAILS -->
+                <div class="pt-4">
+                    <div class="border-b-2 border-[#7a6f5d] pb-3 mb-6 flex justify-between items-end">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase mono-font">FLEET EXPENSE LOGS</span>
+                            <h2 class="text-xl font-bold text-[#3d3a36]">${label} 歷史明細紀錄對帳鏈</h2>
+                        </div>
+                        <span class="text-xs text-stone-400">Page 2 / 2</span>
+                    </div>
+
+                    <div class="mb-8">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">📋 里程接力明細記錄</h3>
+                        <table class="w-full text-left text-xs border border-[#e6e2d8] rounded-lg overflow-hidden">
+                            <thead class="bg-[#f7f5f0] text-stone-600 font-bold border-b border-[#e6e2d8]">
+                                <tr>
+                                    <th class="p-2.5">駕駛成員</th>
+                                    <th class="p-2.5">起始里程 (km)</th>
+                                    <th class="p-2.5">結束里程 (km)</th>
+                                    <th class="p-2.5 text-right">當次小計</th>
+                                    <th class="p-2.5 text-right">記錄時間</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#e6e2d8] mono-font text-stone-700">
+                                ${(data.mileages || []).map(m => `
+                                    <tr>
+                                        <td class="p-2.5 font-bold ${m.user === 'Terence' ? 'text-stone-800' : 'text-[#7a6f5d]'}">${m.user}</td>
+                                        <td class="p-2.5 text-stone-400">${m.start}</td>
+                                        <td class="p-2.5 font-semibold">${m.end}</td>
+                                        <td class="p-2.5 text-right font-bold">${m.diff} km</td>
+                                        <td class="p-2.5 text-right text-stone-400 font-sans text-[11px]">${m.createdAt || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                                ${(!data.mileages || data.mileages.length === 0) ? '<tr><td colspan="5" class="p-4 text-center text-stone-400 italic font-sans">無里程資料</td></tr>' : ''}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">💸 費用支出與拆帳明細記錄</h3>
+                        <table class="w-full text-left text-xs border border-[#e6e2d8] rounded-lg overflow-hidden">
+                            <thead class="bg-[#f7f5f0] text-stone-600 font-bold border-b border-[#e6e2d8]">
+                                <tr>
+                                    <th class="p-2.5">費用項目</th>
+                                    <th class="p-2.5 text-right">總金額</th>
+                                    <th class="p-2.5">代墊人</th>
+                                    <th class="p-2.5">分攤規則</th>
+                                    <th class="p-2.5 text-right">Ken 應分擔</th>
+                                    <th class="p-2.5 text-right">記錄時間</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#e6e2d8] mono-font text-stone-700">
+                                ${(data.expenses || []).map(e => `
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-stone-800 font-sans">${e.item}</td>
+                                        <td class="p-2.5 text-right font-bold">$${e.amount.toLocaleString()}</td>
+                                        <td class="p-2.5 font-semibold ${ (e.user || e.payer) === 'Terence' ? 'text-stone-700' : 'text-[#7a6f5d]'} font-sans">${e.user || e.payer}</td>
+                                        <td class="p-2.5 text-stone-500 font-sans text-[11px]">${e.splitType || e.rule}</td>
+                                        <td class="p-2.5 text-right font-bold text-[#7a6f5d]">$${Math.round(e.kenShare || 0).toLocaleString()}</td>
+                                        <td class="p-2.5 text-right text-stone-400 font-sans text-[11px]">${e.createdAt || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                                ${(!data.expenses || data.expenses.length === 0) ? '<tr><td colspan="6" class="p-4 text-center text-stone-400 italic font-sans">無費用資料</td></tr>' : ''}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <script>
+                    new Chart(document.getElementById('chartMileage'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Terence (${mTkm} km)', 'Ken (${mKkm} km)'],
+                            datasets: [{
+                                data: [${mTkm}, ${mKkm}],
+                                backgroundColor: ['#3d3a36', '#7a6f5d'],
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+                        }
+                    });
+
+                    new Chart(document.getElementById('chartExpenses'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['⚡充電', '🚗車貸', '🛡️保險', '🛣️ETC', '其他'],
+                            datasets: [{
+                                label: '金額 ($)',
+                                data: [
+                                    ${expCategories['⚡ 充電']},
+                                    ${expCategories['🚗 車貸']},
+                                    ${expCategories['🛡️ 保險']},
+                                    ${expCategories['🛣️ ETC']},
+                                    ${expCategories['其他']}
+                                ],
+                                backgroundColor: '#7a6f5d',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                <\/script>
+            </body>
+            </html>
+            `;
+
+            printWin.document.write(reportHtml);
+            printWin.document.close();
+        };
+
+        function generateAndDownloadCSV(filename, dataSnapshot, titleLabel) {
+            let csvContent = "\uFEFF=== " + titleLabel + " 車費與里程對帳報表 ===\n\n--- 里程與大盤存摺摘要 ---\n項目,Terence,Ken,總計\n";
+            csvContent += `本月開車公里數,${dataSnapshot.mTkm} km,${dataSnapshot.mKkm} km,${dataSnapshot.mTkm + dataSnapshot.mKkm} km\n`;
+            csvContent += `歷史至今全期累積里程,${dataSnapshot.allTkm} km,${dataSnapshot.allKkm} km,${dataSnapshot.allTkm + dataSnapshot.allKkm} km\n`;
+            csvContent += `當前輪胎已消耗里程,${dataSnapshot.tyreTkm || 0} km,${dataSnapshot.tyreKkm || 0} km,${(dataSnapshot.tyreTkm || 0) + (dataSnapshot.tyreKkm || 0)} km\n\n`;
+            
+            csvContent += `--- 本月里程明細鏈 ---\n成員,起始里程,結束里程,小計里程,系統輸入時間\n`;
+            if (dataSnapshot.mileages) {
+                dataSnapshot.mileages.forEach(m => {
+                    csvContent += `${m.user},${m.start},${m.end},${m.diff},${m.createdAt || ''}\n`;
+                });
+            }
+            
+            csvContent += `\n--- 本月日常支出與拆帳明細 ---\n費用項目,總金額,是誰代墊付款,分攤規則方式,系統輸入時間\n`;
+            if (dataSnapshot.expenses) { 
+                dataSnapshot.expenses.forEach(e => { 
+                    csvContent += `${e.item},${e.amount},${e.user || e.payer},${e.splitType || e.rule},${e.createdAt || ''}\n`; 
+                }); 
+            }
+            csvContent += `\n最終清算匯款方向,${dataSnapshot.finalActionStr}\n`;
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `${filename}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        window.exportCurrentMonthCSV = function() { if (mileageList.length === 0 && expenseList.length === 0) return alert("尚無資料！"); generateAndDownloadCSV(`本月即時對帳單`, currentMonthCalculatedData, "本月"); };
+        window.exportHistoricalCSV = function(index) { const month = historyMonths[index]; if (month) generateAndDownloadCSV(`歷史結算_${month.label}`, month.snapshot, month.label); };
+        window.downloadSystemBackup = function() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ systemState, mileageList, expenseList, historyMonths })); const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `車費系統高級全備份.json`); dl.click(); };
+        window.importSystemBackup = async function(event) { const file = event.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = async function(e) { try { const p = JSON.parse(e.target.result); if (p.systemState && confirm("確定覆蓋雲端？")) { systemState = p.systemState; mileageList = p.mileageList || []; expenseList = p.expenseList || []; historyMonths = p.historyMonths || []; await updateCloud(); } } catch(err){} }; r.readAsText(file); };
+        window.hardResetSystem = async function() { if(confirm('確定工廠重設？所有數據將回歸至0。')) { systemState = { initialMileage: 0, historyTkm: 0, historyKkm: 0, tyreBaseTkm: 0, tyreBaseKkm: 0 }; mileageList = []; expenseList = []; historyMonths = []; await updateCloud(); } };
+        
+        window.onExpenseItemChanged();
+    </script>
+</body>
+</html>
             morandi: {
               bg: '#F4F5F7',
               card: '#FFFFFF',

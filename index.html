@@ -36,7 +36,7 @@
         <div>
             <div class="flex items-center gap-2">
                 <span class="inline-block w-1.5 h-1.5 bg-[#7a6f5d] rounded-full"></span>
-                <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase mono-font">FLEET EXPENSE EARTH V7.3</span>
+                <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase mono-font">FLEET EXPENSE EARTH V7.4</span>
             </div>
             <h1 class="text-xl font-bold text-[#3d3a36] tracking-tight mt-1">智慧車費里程對帳系統</h1>
         </div>
@@ -51,38 +51,41 @@
         </div>
     </header>
 
-    <!-- 📊 大盤核心指標區 (指定 4 項卡片順序) -->
+    <!-- 📊 大盤核心指標區 (完全避免截斷之自適應 Layout) -->
     <section class="max-w-6xl mx-auto mb-10">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- 卡片 1: 本月里程 -->
             <div class="bg-white border-t-2 border-t-stone-400 border-x border-b border-[#e6e2d8] p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
                 <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">◆ 1. 本月里程</span>
                 <div class="mt-2 flex flex-col justify-center">
-                    <p id="heroTotalKm" class="text-2xl font-bold tracking-tight text-[#3d3a36] mono-font">0 km</p>
-                    <p id="heroKmBreakdown" class="text-xs font-semibold text-[#7a6f5d] mt-0.5 mono-font">T: 0 km / K: 0 km</p>
+                    <p id="heroTotalKm" class="text-2xl sm:text-3xl font-bold tracking-tight text-[#3d3a36] mono-font break-all">0 km</p>
+                    <p id="heroKmBreakdown" class="text-xs font-semibold text-[#7a6f5d] mt-0.5 mono-font break-words">T: 0 km / K: 0 km</p>
                 </div>
-                <span class="text-[10px] text-stone-400 mt-1">雙方累計里程與拆分</span>
+                <span class="text-[10px] text-stone-400 mt-2">雙方累計里程與拆分</span>
             </div>
 
             <!-- 卡片 2: 本月充電 -->
             <div class="bg-white border-t-2 border-t-[#7a6f5d] border-x border-b border-[#e6e2d8] p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
                 <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase">⚡ 2. 本月充電</span>
-                <p id="heroTotalCharging" class="text-2xl font-bold tracking-tight text-[#3d3a36] mt-2 mono-font">$0</p>
-                <span class="text-[10px] text-stone-400 mt-1">獨立計算充電相關費用</span>
+                <p id="heroTotalCharging" class="text-2xl sm:text-3xl font-bold tracking-tight text-[#3d3a36] mt-2 mono-font break-all">$0</p>
+                <span class="text-[10px] text-stone-400 mt-2">獨立計算充電相關費用</span>
             </div>
 
             <!-- 卡片 3: 本月雜費 -->
             <div class="bg-white border-t-2 border-t-stone-400 border-x border-b border-[#e6e2d8] p-5 rounded-xl shadow-sm flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
                 <span class="text-[10px] font-bold tracking-widest text-stone-400 uppercase">💸 3. 本月雜費</span>
-                <p id="heroTotalOtherExpense" class="text-2xl font-bold tracking-tight text-[#3d3a36] mt-2 mono-font">$0</p>
-                <span class="text-[10px] text-stone-400 mt-1">車貸、保險、ETC 與其他雜費</span>
+                <p id="heroTotalOtherExpense" class="text-2xl sm:text-3xl font-bold tracking-tight text-[#3d3a36] mt-2 mono-font break-all">$0</p>
+                <span class="text-[10px] text-stone-400 mt-2">車貸、保險、ETC 與其他雜費</span>
             </div>
 
-            <!-- 卡片 4: 最終支付方向 -->
-            <div id="heroFinalFlowCard" class="bg-gradient-to-br from-[#3d3a36] via-[#4e473f] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#5c544a] hover:-translate-y-0.5">
+            <!-- 卡片 4: 最終支付方向 (防截斷強化版) -->
+            <div id="heroFinalFlowCard" class="bg-gradient-to-br from-[#3d3a36] via-[#4e473f] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#5c544a] hover:-translate-y-0.5 min-h-[140px]">
                 <span id="heroFinalTitle" class="text-[10px] font-bold tracking-widest text-[#dcd7cc] uppercase">⊙ 4. 最終支付方向</span>
-                <p id="heroFinalAction" class="text-xs font-semibold mt-2 truncate text-[#eae5d9]">計算中...</p>
-                <p id="heroFinalAmount" class="text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-[#eae5d9] to-[#dcd7cc]">$0</p>
+                <div class="my-1">
+                    <p id="heroFinalAction" class="text-xs font-bold leading-snug text-[#eae5d9] break-words">計算中...</p>
+                    <p id="heroFinalAmount" class="text-2xl sm:text-3xl font-black tracking-tight text-white mt-1 mono-font break-all">$0</p>
+                </div>
+                <span class="text-[10px] text-stone-400">當月對帳淨流向金額</span>
             </div>
         </div>
     </section>
@@ -510,34 +513,42 @@
             const heroAmount = document.getElementById('heroFinalAmount');
 
             let finalActionStr = "";
+            let actionTextOnly = "";
+            let actionAmountOnly = "$0";
             
             if (Math.round(netFlow) === 0) {
-                heroCard.className = "bg-white border-t-2 border-t-[#8fa89b] border-x border-b border-[#e6e2d8] p-5 rounded-xl flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-md";
+                heroCard.className = "bg-white border-t-2 border-t-[#8fa89b] border-x border-b border-[#e6e2d8] p-5 rounded-xl flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-md min-h-[140px]";
                 heroTitle.className = "text-[10px] font-bold tracking-widest text-stone-400 uppercase";
-                heroAction.className = "text-xs font-semibold text-[#8fa89b] mt-2 truncate";
-                heroAmount.className = "text-3xl font-black tracking-tight text-stone-300 mt-1 mono-font";
-                heroAction.innerText = "雙方帳目平衡 BALANCE"; heroAmount.innerText = "$0"; finalActionStr = "雙方帳目平衡";
+                heroAction.className = "text-xs font-bold text-[#8fa89b] leading-snug break-words";
+                heroAmount.className = "text-2xl sm:text-3xl font-black tracking-tight text-stone-300 mt-1 mono-font break-all";
+                actionTextOnly = "雙方帳目平衡 BALANCE";
+                actionAmountOnly = "$0";
+                finalActionStr = "雙方帳目平衡";
             } else if (netFlow > 0) {
-                heroCard.className = "bg-gradient-to-br from-[#3d3a36] via-[#4e473f] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#5c544a] text-white hover:-translate-y-0.5";
+                heroCard.className = "bg-gradient-to-br from-[#3d3a36] via-[#4e473f] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#5c544a] text-white hover:-translate-y-0.5 min-h-[140px]";
                 heroTitle.className = "text-[10px] font-bold tracking-widest text-[#dcd7cc] uppercase";
-                heroAction.className = "text-xs font-medium text-[#eae5d9] mt-2 truncate";
-                heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-[#eae5d9] to-[#dcd7cc]";
-                heroAction.innerText = "🙋‍♂️ Ken 應匯款給 Terence";
-                heroAmount.innerText = `$${Math.round(netFlow).toLocaleString()}`;
+                heroAction.className = "text-xs font-bold text-[#eae5d9] leading-snug break-words";
+                heroAmount.className = "text-2xl sm:text-3xl font-black tracking-tight text-white mt-1 mono-font break-all";
+                actionTextOnly = "🙋‍♂️ Ken 應匯款給 Terence";
+                actionAmountOnly = `$${Math.round(netFlow).toLocaleString()}`;
                 finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
             } else {
-                heroCard.className = "bg-gradient-to-br from-[#3d3a36] via-[#464e46] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#4e544e] text-white hover:-translate-y-0.5";
+                heroCard.className = "bg-gradient-to-br from-[#3d3a36] via-[#464e46] to-[#3d3a36] p-5 rounded-xl shadow-xl flex flex-col justify-between transition-all duration-300 border border-[#4e544e] text-white hover:-translate-y-0.5 min-h-[140px]";
                 heroTitle.className = "text-[10px] font-bold tracking-widest text-[#dcd7cc] uppercase";
-                heroAction.className = "text-xs font-medium text-[#eae5d9] mt-2 truncate";
-                heroAmount.className = "text-3xl font-black tracking-tight text-white mt-1 mono-font bg-clip-text text-transparent bg-gradient-to-r from-white via-[#eae5d9] to-[#dcd7cc]";
-                heroAction.innerText = "🙋‍♂️ Terence 應匯款給 Ken";
-                heroAmount.innerText = `$${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+                heroAction.className = "text-xs font-bold text-[#eae5d9] leading-snug break-words";
+                heroAmount.className = "text-2xl sm:text-3xl font-black tracking-tight text-white mt-1 mono-font break-all";
+                actionTextOnly = "🙋‍♂️ Terence 應匯款給 Ken";
+                actionAmountOnly = `$${Math.round(Math.abs(netFlow)).toLocaleString()}`;
                 finalActionStr = `Terence 應匯款給 Ken $${Math.round(Math.abs(netFlow)).toLocaleString()}`;
             }
 
+            heroAction.innerText = actionTextOnly;
+            heroAmount.innerText = actionAmountOnly;
+
             currentMonthCalculatedData = {
                 mTkm, mKkm, allTkm, allKkm, allRatioK, tyreTkm, tyreKkm, tyreRatioK, baseT, baseK,
-                tPaid, kPaid, totalCharging, totalOtherExpense, totalExp, kResponsibility, netFlow, finalActionStr,
+                tPaid, kPaid, totalCharging, totalOtherExpense, totalExp, kResponsibility, netFlow, 
+                finalActionStr, actionTextOnly, actionAmountOnly,
                 mileages: JSON.parse(JSON.stringify(mileageList)), expenses: expenseList
             };
             renderHistoryMonths();
@@ -759,7 +770,7 @@
             if (confirm(`確定要刪除歷史封存備份嗎？`)) { historyMonths.splice(index, 1); await updateCloud(); }
         };
 
-        // 📊 視覺化 PDF / 列印報表 (完全動態動態重算版，支援所有歷史封存檔)
+        // 📊 視覺化 PDF / 列印報表 (完全動態重算 + 防截斷排版版)
         window.exportVisualReport = function(isCurrentMonth, historyIdx = null) {
             let data = isCurrentMonth ? currentMonthCalculatedData : historyMonths[historyIdx].snapshot;
             let label = isCurrentMonth ? "本月即時" : historyMonths[historyIdx].label;
@@ -770,7 +781,7 @@
                 return;
             }
 
-            // 1. 徹底掃描該月份封存的原始支出明細，重新計算各項總額（相容所有歷史格式）
+            // 1. 徹底掃描該月份封存的原始支出明細，重新計算各項總額
             let expCategories = { '⚡ 充電': 0, '🚗 車貸': 0, '🛡️ 保險': 0, '🛣️ ETC': 0, '其他': 0 };
             let totalExp = 0;
             let totalCharging = 0;
@@ -778,7 +789,6 @@
             let kPaid = 0;
             let kResponsibility = 0;
 
-            // 計算里程
             let mTkm = 0, mKkm = 0;
             (data.mileages || []).forEach(m => {
                 const diff = Number(m.diff) || 0;
@@ -787,7 +797,6 @@
             });
             const monthTotalKm = (mTkm + mKkm) || ((data.mTkm || 0) + (data.mKkm || 0));
 
-            // 計算費用與分類
             (data.expenses || []).forEach(e => {
                 const amt = Number(e.amount) || 0;
                 const payer = e.user || e.payer;
@@ -821,7 +830,6 @@
                 }
             });
 
-            // 備回機制
             if (tPaid === 0 && data.tPaid) tPaid = data.tPaid;
             if (kPaid === 0 && data.kPaid) kPaid = data.kPaid;
             kResponsibility = Math.round(kResponsibility || data.kResponsibility || 0);
@@ -832,11 +840,20 @@
             const kNetDiff = kPaid - kResponsibility;
             const netFlow = kResponsibility - kPaid;
 
-            let finalActionStr = data.finalActionStr;
-            if (!finalActionStr) {
-                if (Math.round(netFlow) === 0) finalActionStr = "雙方帳目平衡";
-                else if (netFlow > 0) finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
-                else finalActionStr = `Terence 應匯款給 Ken $${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+            let reportActionText = data.actionTextOnly;
+            let reportAmountText = data.actionAmountOnly;
+
+            if (!reportActionText) {
+                if (Math.round(netFlow) === 0) {
+                    reportActionText = "雙方帳目平衡 BALANCE";
+                    reportAmountText = "$0";
+                } else if (netFlow > 0) {
+                    reportActionText = "🙋‍♂️ Ken 應匯款給 Terence";
+                    reportAmountText = `$${Math.round(netFlow).toLocaleString()}`;
+                } else {
+                    reportActionText = "🙋‍♂️ Terence 應匯款給 Ken";
+                    reportAmountText = `$${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+                }
             }
 
             const reportHtml = `
@@ -881,31 +898,37 @@
                         </div>
                     </div>
 
-                    <!-- 4 大指標卡片 (嚴格依序：本月里程、本月充電、本月雜費、最終支付方向) -->
+                    <!-- 4 大指標卡片 (無裁切強固版) -->
                     <div class="grid grid-cols-4 gap-4 mb-6">
-                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
+                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50 flex flex-col justify-between">
                             <span class="text-[10px] font-bold text-stone-400 uppercase">◆ 1. 本月里程</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">${monthTotalKm.toLocaleString()} km</p>
-                            <p class="text-[11px] text-[#7a6f5d] mt-1 font-semibold mono-font">T: ${mTkm.toLocaleString()} / K: ${mKkm.toLocaleString()}</p>
+                            <div class="my-1">
+                                <p class="text-xl font-bold text-stone-800 mono-font break-all">${monthTotalKm.toLocaleString()} km</p>
+                                <p class="text-[11px] text-[#7a6f5d] mt-0.5 font-semibold mono-font break-words">T: ${mTkm.toLocaleString()} / K: ${mKkm.toLocaleString()}</p>
+                            </div>
+                            <span class="text-[9px] text-stone-400">雙方累計里程拆分</span>
                         </div>
-                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
+                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50 flex flex-col justify-between">
                             <span class="text-[10px] font-bold text-[#7a6f5d] uppercase">⚡ 2. 本月充電</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">$${totalCharging.toLocaleString()}</p>
-                            <p class="text-[11px] text-stone-400 mt-1">獨立計算充電相關金額</p>
+                            <p class="text-xl font-bold text-stone-800 my-1 mono-font break-all">$${totalCharging.toLocaleString()}</p>
+                            <p class="text-[9px] text-stone-400">獨立計算充電相關金額</p>
                         </div>
-                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
+                        <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50 flex flex-col justify-between">
                             <span class="text-[10px] font-bold text-stone-400 uppercase">💸 3. 本月雜費</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">$${totalOtherExpense.toLocaleString()}</p>
-                            <p class="text-[11px] text-stone-400 mt-1">包含車貸、保險、ETC等雜費</p>
+                            <p class="text-xl font-bold text-stone-800 my-1 mono-font break-all">$${totalOtherExpense.toLocaleString()}</p>
+                            <p class="text-[9px] text-stone-400">包含車貸、保險、ETC等雜費</p>
                         </div>
-                        <div class="border border-[#3d3a36] p-4 rounded-xl bg-[#3d3a36] text-white">
+                        <div class="border border-[#3d3a36] p-4 rounded-xl bg-[#3d3a36] text-white flex flex-col justify-between">
                             <span class="text-[10px] font-bold text-[#dcd7cc] uppercase">⊙ 4. 最終支付方向</span>
-                            <p class="text-sm font-bold text-white mt-1 truncate">${finalActionStr}</p>
-                            <p class="text-[10px] text-[#eae5d9] mt-1">當月對帳淨流向金額</p>
+                            <div class="my-1">
+                                <p class="text-xs font-bold text-[#eae5d9] leading-tight break-words">${reportActionText}</p>
+                                <p class="text-xl font-black text-white mt-1 mono-font break-all">${reportAmountText}</p>
+                            </div>
+                            <p class="text-[9px] text-stone-400">當月對帳淨流向金額</p>
                         </div>
                     </div>
 
-                    <!-- 有效圖表區 (僅保留 2 個核心圖表) -->
+                    <!-- 有效圖表區 (保留 2 個核心圖表) -->
                     <div class="grid grid-cols-2 gap-6 mb-6">
                         <div class="border border-[#e6e2d8] p-5 rounded-xl bg-white shadow-sm">
                             <h3 class="text-xs font-bold text-stone-600 uppercase mb-3 border-b border-stone-100 pb-2">📊 當月里程駕駛貢獻 (km)</h3>

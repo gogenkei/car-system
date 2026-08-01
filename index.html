@@ -36,7 +36,7 @@
         <div>
             <div class="flex items-center gap-2">
                 <span class="inline-block w-1.5 h-1.5 bg-[#7a6f5d] rounded-full"></span>
-                <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase mono-font">FLEET EXPENSE EARTH V7.2</span>
+                <span class="text-[10px] font-bold tracking-widest text-[#7a6f5d] uppercase mono-font">FLEET EXPENSE EARTH V7.3</span>
             </div>
             <h1 class="text-xl font-bold text-[#3d3a36] tracking-tight mt-1">智慧車費里程對帳系統</h1>
         </div>
@@ -432,7 +432,7 @@
                 let ruleText = ''; let computedKenShare = 0;
                 totalExp += e.amount;
                 
-                if (e.item === '⚡ 充電') {
+                if (e.item && e.item.includes('充電')) {
                     totalCharging += e.amount;
                 }
 
@@ -652,7 +652,7 @@
                         </div>
                     </div>
                     <div class="text-[11px] text-stone-500 space-y-0.5 font-light mono-font">
-                        <div>里程: Terence:${month.snapshot.mTkm}km / Ken:${month.snapshot.mKkm}km</div>
+                        <div>里程: Terence:${month.snapshot.mTkm || 0}km / Ken:${month.snapshot.mKkm || 0}km</div>
                         <div class="text-stone-800 font-semibold mt-1 font-sans">結果：${month.snapshot.finalActionStr}</div>
                     </div>
                 `;
@@ -759,7 +759,7 @@
             if (confirm(`確定要刪除歷史封存備份嗎？`)) { historyMonths.splice(index, 1); await updateCloud(); }
         };
 
-        // 📊 視覺化 PDF / 列印報表 (完全符合要求之 Layout 重構版)
+        // 📊 視覺化 PDF / 列印報表 (完全動態動態重算版，支援所有歷史封存檔)
         window.exportVisualReport = function(isCurrentMonth, historyIdx = null) {
             let data = isCurrentMonth ? currentMonthCalculatedData : historyMonths[historyIdx].snapshot;
             let label = isCurrentMonth ? "本月即時" : historyMonths[historyIdx].label;
@@ -770,20 +770,74 @@
                 return;
             }
 
+            // 1. 徹底掃描該月份封存的原始支出明細，重新計算各項總額（相容所有歷史格式）
             let expCategories = { '⚡ 充電': 0, '🚗 車貸': 0, '🛡️ 保險': 0, '🛣️ ETC': 0, '其他': 0 };
-            let totalExp = data.totalExp || 0;
-            let totalCharging = data.totalCharging || 0;
-            let totalOtherExpense = data.totalOtherExpense || (totalExp - totalCharging);
+            let totalExp = 0;
+            let totalCharging = 0;
+            let tPaid = 0;
+            let kPaid = 0;
+            let kResponsibility = 0;
 
+            // 計算里程
+            let mTkm = 0, mKkm = 0;
+            (data.mileages || []).forEach(m => {
+                const diff = Number(m.diff) || 0;
+                if (m.user === 'Terence') mTkm += diff;
+                if (m.user === 'Ken') mKkm += diff;
+            });
+            const monthTotalKm = (mTkm + mKkm) || ((data.mTkm || 0) + (data.mKkm || 0));
+
+            // 計算費用與分類
             (data.expenses || []).forEach(e => {
-                if (expCategories[e.item] !== undefined) expCategories[e.item] += e.amount;
-                else expCategories['其他'] += e.amount;
+                const amt = Number(e.amount) || 0;
+                const payer = e.user || e.payer;
+                const itemStr = e.item || '';
+
+                totalExp += amt;
+
+                if (payer === 'Terence') tPaid += amt;
+                if (payer === 'Ken') kPaid += amt;
+
+                if (itemStr.includes('充電')) {
+                    expCategories['⚡ 充電'] += amt;
+                    totalCharging += amt;
+                } else if (itemStr.includes('車貸')) {
+                    expCategories['🚗 車貸'] += amt;
+                } else if (itemStr.includes('保險')) {
+                    expCategories['🛡️ 保險'] += amt;
+                } else if (itemStr.includes('ETC')) {
+                    expCategories['🛣️ ETC'] += amt;
+                } else {
+                    expCategories['其他'] += amt;
+                }
+
+                if (e.kenShare !== undefined) {
+                    kResponsibility += Number(e.kenShare);
+                } else {
+                    if (e.splitType === '50_50') kResponsibility += amt * 0.5;
+                    else if (e.splitType === '23_13') kResponsibility += amt * (1 / 3);
+                    else if (e.splitType === 'Ken') kResponsibility += amt;
+                    else if (e.splitType === 'month_mileage' && monthTotalKm > 0) kResponsibility += amt * (mKkm / monthTotalKm);
+                }
             });
 
-            const tResponsibility = Math.round(totalExp - data.kResponsibility);
-            const kResponsibility = Math.round(data.kResponsibility);
-            const tNetDiff = data.tPaid - tResponsibility;
-            const kNetDiff = data.kPaid - kResponsibility;
+            // 備回機制
+            if (tPaid === 0 && data.tPaid) tPaid = data.tPaid;
+            if (kPaid === 0 && data.kPaid) kPaid = data.kPaid;
+            kResponsibility = Math.round(kResponsibility || data.kResponsibility || 0);
+
+            const totalOtherExpense = totalExp - totalCharging;
+            const tResponsibility = Math.round(totalExp - kResponsibility);
+            const tNetDiff = tPaid - tResponsibility;
+            const kNetDiff = kPaid - kResponsibility;
+            const netFlow = kResponsibility - kPaid;
+
+            let finalActionStr = data.finalActionStr;
+            if (!finalActionStr) {
+                if (Math.round(netFlow) === 0) finalActionStr = "雙方帳目平衡";
+                else if (netFlow > 0) finalActionStr = `Ken 應匯款給 Terence $${Math.round(netFlow).toLocaleString()}`;
+                else finalActionStr = `Terence 應匯款給 Ken $${Math.round(Math.abs(netFlow)).toLocaleString()}`;
+            }
 
             const reportHtml = `
             <!DOCTYPE html>
@@ -831,8 +885,8 @@
                     <div class="grid grid-cols-4 gap-4 mb-6">
                         <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
                             <span class="text-[10px] font-bold text-stone-400 uppercase">◆ 1. 本月里程</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">${(data.mTkm + data.mKkm).toLocaleString()} km</p>
-                            <p class="text-[11px] text-[#7a6f5d] mt-1 font-semibold mono-font">T: ${data.mTkm.toLocaleString()} / K: ${data.mKkm.toLocaleString()}</p>
+                            <p class="text-xl font-bold text-stone-800 mt-1 mono-font">${monthTotalKm.toLocaleString()} km</p>
+                            <p class="text-[11px] text-[#7a6f5d] mt-1 font-semibold mono-font">T: ${mTkm.toLocaleString()} / K: ${mKkm.toLocaleString()}</p>
                         </div>
                         <div class="border border-[#e6e2d8] p-4 rounded-xl bg-[#f7f5f0]/50">
                             <span class="text-[10px] font-bold text-[#7a6f5d] uppercase">⚡ 2. 本月充電</span>
@@ -846,7 +900,7 @@
                         </div>
                         <div class="border border-[#3d3a36] p-4 rounded-xl bg-[#3d3a36] text-white">
                             <span class="text-[10px] font-bold text-[#dcd7cc] uppercase">⊙ 4. 最終支付方向</span>
-                            <p class="text-sm font-bold text-white mt-1 truncate">${data.finalActionStr}</p>
+                            <p class="text-sm font-bold text-white mt-1 truncate">${finalActionStr}</p>
                             <p class="text-[10px] text-[#eae5d9] mt-1">當月對帳淨流向金額</p>
                         </div>
                     </div>
@@ -867,7 +921,7 @@
                         </div>
                     </div>
 
-                    <!-- 取代無意義圖表：雙方對帳核算清算總表 -->
+                    <!-- 雙方對帳核算清算總表 -->
                     <div class="border border-[#e6e2d8] rounded-xl p-5 bg-white shadow-sm">
                         <h3 class="text-xs font-bold text-stone-700 uppercase mb-3 border-b border-stone-100 pb-2.5 flex justify-between items-center">
                             <span>⚖️ 雙方對帳核算清算總表</span>
@@ -885,7 +939,7 @@
                             <tbody class="divide-y divide-[#e6e2d8] mono-font text-stone-700">
                                 <tr>
                                     <td class="p-2.5 font-bold text-stone-800 font-sans">Terence</td>
-                                    <td class="p-2.5 text-right font-medium">$${data.tPaid.toLocaleString()}</td>
+                                    <td class="p-2.5 text-right font-medium">$${tPaid.toLocaleString()}</td>
                                     <td class="p-2.5 text-right font-medium">$${tResponsibility.toLocaleString()}</td>
                                     <td class="p-2.5 text-right font-bold ${tNetDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
                                         ${tNetDiff >= 0 ? `應收取 $${tNetDiff.toLocaleString()}` : `應支付 $${Math.abs(tNetDiff).toLocaleString()}`}
@@ -893,7 +947,7 @@
                                 </tr>
                                 <tr>
                                     <td class="p-2.5 font-bold text-[#7a6f5d] font-sans">Ken</td>
-                                    <td class="p-2.5 text-right font-medium">$${data.kPaid.toLocaleString()}</td>
+                                    <td class="p-2.5 text-right font-medium">$${kPaid.toLocaleString()}</td>
                                     <td class="p-2.5 text-right font-medium">$${kResponsibility.toLocaleString()}</td>
                                     <td class="p-2.5 text-right font-bold ${kNetDiff >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
                                         ${kNetDiff >= 0 ? `應收取 $${kNetDiff.toLocaleString()}` : `應支付 $${Math.abs(kNetDiff).toLocaleString()}`}
@@ -959,7 +1013,7 @@
                                     <tr>
                                         <td class="p-2.5 font-bold text-stone-800 font-sans">${e.item}</td>
                                         <td class="p-2.5 text-right font-bold">$${e.amount.toLocaleString()}</td>
-                                        <td class="p-2.5 font-semibold ${e.user === 'Terence' ? 'text-stone-700' : 'text-[#7a6f5d]'} font-sans">${e.user || e.payer}</td>
+                                        <td class="p-2.5 font-semibold ${ (e.user || e.payer) === 'Terence' ? 'text-stone-700' : 'text-[#7a6f5d]'} font-sans">${e.user || e.payer}</td>
                                         <td class="p-2.5 text-stone-500 font-sans text-[11px]">${e.splitType || e.rule}</td>
                                         <td class="p-2.5 text-right font-bold text-[#7a6f5d]">$${Math.round(e.kenShare || 0).toLocaleString()}</td>
                                         <td class="p-2.5 text-right text-stone-400 font-sans text-[11px]">${e.createdAt || '-'}</td>
@@ -975,9 +1029,9 @@
                     new Chart(document.getElementById('chartMileage'), {
                         type: 'doughnut',
                         data: {
-                            labels: ['Terence (${data.mTkm} km)', 'Ken (${data.mKkm} km)'],
+                            labels: ['Terence (${mTkm} km)', 'Ken (${mKkm} km)'],
                             datasets: [{
-                                data: [${data.mTkm}, ${data.mKkm}],
+                                data: [${mTkm}, ${mKkm}],
                                 backgroundColor: ['#3d3a36', '#7a6f5d'],
                                 borderWidth: 2,
                                 borderColor: '#ffffff'

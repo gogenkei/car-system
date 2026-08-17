@@ -25,8 +25,10 @@ const ITEM_LABELS = {
   "⚡ 充電": "充電",
   "🚗 車貸": "車貸",
   "🛡️ 保險": "保險",
-  "🛣️ ETC": "ETC"
+  "🛣️ ETC": "ETC",
+  "🛞 輪胎": "輪胎"
 };
+const SELECTABLE_SPLIT_TYPES = new Set(["month_mileage", "23_13", "50_50"]);
 const ROUTES = new Set(["home", "add", "history", "settings"]);
 const currencyFormatter = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -105,6 +107,7 @@ const elements = {
   expenseAmountError: document.querySelector("#expenseAmountError"),
   expensePayer: document.querySelector("#expensePayer"),
   expenseSplitType: document.querySelector("#expenseSplitType"),
+  lockedSplitValue: document.querySelector("#lockedSplitValue"),
   splitHelper: document.querySelector("#splitHelper"),
   expenseSubmitButton: document.querySelector("#expenseSubmitButton"),
   cancelExpenseEditButton: document.querySelector("#cancelExpenseEditButton"),
@@ -635,6 +638,7 @@ function renderAccount() {
   }
   elements.mileageUser.disabled = !admin;
   elements.expensePayer.disabled = !admin;
+  configureExpenseSplit();
 }
 
 function renderAll() {
@@ -825,22 +829,52 @@ function startMileageEdit(id) {
   elements.endMileage.focus();
 }
 
+function showLockedExpenseSplit(value, helperText) {
+  elements.expenseSplitType.hidden = true;
+  elements.expenseSplitType.disabled = true;
+  elements.lockedSplitValue.hidden = false;
+  elements.lockedSplitValue.textContent = value;
+  elements.splitHelper.textContent = helperText;
+}
+
+function showSelectableExpenseSplit() {
+  elements.expenseSplitType.hidden = false;
+  elements.expenseSplitType.disabled = false;
+  elements.lockedSplitValue.hidden = true;
+  if (!SELECTABLE_SPLIT_TYPES.has(elements.expenseSplitType.value)) {
+    elements.expenseSplitType.value = "month_mileage";
+  }
+  elements.splitHelper.textContent = "請選擇這筆費用的分攤方式。";
+}
+
 function configureExpenseSplit() {
   const type = elements.expenseItem.value;
   const isCustom = type === "其他";
   elements.customExpenseField.hidden = !isCustom;
-  elements.expenseSplitType.disabled = false;
   if (type === "⚡ 充電") {
     elements.expenseSplitType.value = "month_mileage";
-    elements.expenseSplitType.disabled = true;
-    elements.splitHelper.textContent = "充電固定依本月里程比例分攤。";
+    showLockedExpenseSplit("依本月里程比例", "充電固定依本月里程比例分攤。");
   } else if (type === "🚗 車貸" || type === "🛡️ 保險") {
     elements.expenseSplitType.value = "23_13";
-    elements.expenseSplitType.disabled = true;
-    elements.splitHelper.textContent = "車貸與保險固定由 Terence 負擔 2/3、Ken 負擔 1/3。";
+    showLockedExpenseSplit("Terence 2/3、Ken 1/3", "車貸與保險固定由 Terence 負擔 2/3、Ken 負擔 1/3。");
+  } else if (type === "🛣️ ETC") {
+    const payer = elements.expensePayer.value;
+    showLockedExpenseSplit(`由 ${payer} 全額負擔`, `ETC 由付款人 ${payer} 全額負擔。`);
+  } else if (type === "🛞 輪胎") {
+    showLockedExpenseSplit("依本期輪胎使用比例", "輪胎固定依本期輪胎使用比例分攤。");
   } else {
-    elements.splitHelper.textContent = "請選擇這筆費用的分攤方式。";
+    showSelectableExpenseSplit();
   }
+}
+
+function selectedExpenseSplitType(type, payer) {
+  if (type === "⚡ 充電") return "month_mileage";
+  if (type === "🚗 車貸" || type === "🛡️ 保險") return "23_13";
+  if (type === "🛣️ ETC") return payer;
+  if (type === "🛞 輪胎") return "tire";
+  return SELECTABLE_SPLIT_TYPES.has(elements.expenseSplitType.value)
+    ? elements.expenseSplitType.value
+    : "month_mileage";
 }
 
 function resetExpenseForm() {
@@ -879,7 +913,7 @@ async function handleExpenseSubmit(event) {
     item,
     amount,
     user: elements.expensePayer.value,
-    splitType: elements.expenseSplitType.value,
+    splitType: selectedExpenseSplitType(type, elements.expensePayer.value),
     createdAt: existing?.createdAt || new Date().toISOString(),
     createdBy: existing?.createdBy || currentUser.uid,
     updatedAt: editingExpenseId ? new Date().toISOString() : null
@@ -915,11 +949,13 @@ function startExpenseEdit(id) {
   editingExpenseId = id;
   const knownItem = Object.prototype.hasOwnProperty.call(ITEM_LABELS, expense.item);
   elements.expenseItem.value = knownItem ? expense.item : "其他";
-  configureExpenseSplit();
   if (!knownItem) elements.customExpenseItem.value = displayItemName(expense.item);
   elements.expenseAmount.value = expense.amount;
   elements.expensePayer.value = expense.user;
-  elements.expenseSplitType.value = expense.splitType;
+  configureExpenseSplit();
+  if (!elements.expenseSplitType.disabled && SELECTABLE_SPLIT_TYPES.has(expense.splitType)) {
+    elements.expenseSplitType.value = expense.splitType;
+  }
   elements.expenseFormTitle.textContent = "編輯費用";
   elements.expenseSubmitButton.textContent = "儲存修改";
   elements.cancelExpenseEditButton.hidden = false;
@@ -1263,6 +1299,7 @@ function bindEvents() {
   elements.cancelMileageEditButton.addEventListener("click", resetMileageForm);
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.expenseItem.addEventListener("change", configureExpenseSplit);
+  elements.expensePayer.addEventListener("change", configureExpenseSplit);
   elements.cancelExpenseEditButton.addEventListener("click", resetExpenseForm);
   elements.signOutButton.addEventListener("click", () => signOut(auth));
   elements.closeMonthButton.addEventListener("click", () => closeCurrentMonth().catch(() => {}));
@@ -1312,7 +1349,7 @@ if (localPreview) {
     ],
     expenseList: [
       { id: "preview-expense-1", item: "⚡ 充電", amount: 680, user: "Terence", splitType: "month_mileage", createdBy: "terence-preview", createdAt: "2026-08-17T09:10:00+08:00" },
-      { id: "preview-expense-2", item: "🛣️ ETC", amount: 240, user: "Ken", splitType: "50_50", createdBy: "local-preview", createdAt: "2026-08-17T10:25:00+08:00" }
+      { id: "preview-expense-2", item: "🛣️ ETC", amount: 240, user: "Ken", splitType: "Ken", createdBy: "local-preview", createdAt: "2026-08-17T10:25:00+08:00" }
     ]
   });
   calculatedState = calculateDatabase(databaseState);

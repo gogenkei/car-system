@@ -305,6 +305,21 @@
     </form>
   </dialog>
 
+  <dialog id="reportDialog" class="report-dialog" aria-labelledby="reportDialogTitle">
+    <div class="report-dialog-toolbar">
+      <div>
+        <p class="eyebrow">歷史月報</p>
+        <h2 id="reportDialogTitle">月報預覽</h2>
+        <p>列印時可選擇「儲存為 PDF」。</p>
+      </div>
+      <div class="report-dialog-actions">
+        <button id="reportCloseButton" class="button button-secondary" type="button">關閉</button>
+        <button id="reportPrintButton" class="button button-primary" type="button">列印／儲存 PDF</button>
+      </div>
+    </div>
+    <article id="monthlyReport" class="monthly-report"></article>
+  </dialog>
+
   <script type="module" src="./app.js"></script>
 </body>
 </html>

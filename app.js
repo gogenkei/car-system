@@ -21,13 +21,20 @@ import { firebaseConfig, firestorePaths } from "./firebase-config.js";
 
 const SCHEMA_VERSION = 3;
 const USERS = ["Terence", "Ken"];
+const ETC_ITEM = "🛣️ ETC";
 const ITEM_LABELS = {
   "⚡ 充電": "充電",
   "🚗 車貸": "車貸",
   "🛡️ 保險": "保險",
-  "🛣️ ETC": "ETC",
+  [ETC_ITEM]: "ETC",
+  "🛣️ ETC-Terence": "ETC",
+  "🛣️ ETC-Ken": "ETC",
   "🛞 輪胎": "輪胎"
 };
+const ETC_FORM_OWNERS = new Map([
+  ["🛣️ ETC-Terence", "Terence"],
+  ["🛣️ ETC-Ken", "Ken"]
+]);
 const SELECTABLE_SPLIT_TYPES = new Set(["month_mileage", "23_13", "50_50"]);
 const ROUTES = new Set(["home", "add", "history", "settings"]);
 const currencyFormatter = new Intl.NumberFormat("zh-TW", {
@@ -205,12 +212,14 @@ function normalizeMileage(entry, index) {
 
 function normalizeExpense(entry, index) {
   const payer = entry.user || entry.payer;
+  const rawItem = String(entry.item || "其他");
+  const etcOwner = ETC_FORM_OWNERS.get(rawItem);
   return {
     id: entry.id || deterministicId("expense", [entry.createdAt || "", entry.item || "", entry.amount || 0, payer || "", index]),
-    item: String(entry.item || "其他").slice(0, 60),
+    item: (etcOwner ? ETC_ITEM : rawItem).slice(0, 60),
     amount: Math.round(Math.max(0, safeNumber(entry.amount))),
-    user: USERS.includes(payer) ? payer : USERS[0],
-    splitType: inferSplitType(entry),
+    user: etcOwner ? "Ken" : (USERS.includes(payer) ? payer : USERS[0]),
+    splitType: etcOwner || inferSplitType(entry),
     createdAt: entry.createdAt || new Date(0).toISOString(),
     createdBy: String(entry.createdBy || ""),
     updatedAt: entry.updatedAt || null
@@ -850,16 +859,22 @@ function showSelectableExpenseSplit() {
 function configureExpenseSplit() {
   const type = elements.expenseItem.value;
   const isCustom = type === "其他";
+  const etcOwner = ETC_FORM_OWNERS.get(type);
   elements.customExpenseField.hidden = !isCustom;
+  elements.expensePayer.disabled = !isAdmin();
   if (type === "⚡ 充電") {
     elements.expenseSplitType.value = "month_mileage";
     showLockedExpenseSplit("依本月里程比例", "充電固定依本月里程比例分攤。");
   } else if (type === "🚗 車貸" || type === "🛡️ 保險") {
     elements.expenseSplitType.value = "23_13";
     showLockedExpenseSplit("Terence 2/3、Ken 1/3", "車貸與保險固定由 Terence 負擔 2/3、Ken 負擔 1/3。");
-  } else if (type === "🛣️ ETC") {
-    const payer = elements.expensePayer.value;
-    showLockedExpenseSplit(`由 ${payer} 全額負擔`, `ETC 由付款人 ${payer} 全額負擔。`);
+  } else if (etcOwner) {
+    elements.expensePayer.value = "Ken";
+    elements.expensePayer.disabled = true;
+    showLockedExpenseSplit(
+      `由 ${etcOwner} 全額負擔`,
+      `付款人固定為 Ken；這筆 ETC 由 ${etcOwner} 全額負擔。`
+    );
   } else if (type === "🛞 輪胎") {
     showLockedExpenseSplit("依本期輪胎使用比例", "輪胎固定依本期輪胎使用比例分攤。");
   } else {
@@ -867,10 +882,11 @@ function configureExpenseSplit() {
   }
 }
 
-function selectedExpenseSplitType(type, payer) {
+function selectedExpenseSplitType(type) {
+  const etcOwner = ETC_FORM_OWNERS.get(type);
+  if (etcOwner) return etcOwner;
   if (type === "⚡ 充電") return "month_mileage";
   if (type === "🚗 車貸" || type === "🛡️ 保險") return "23_13";
-  if (type === "🛣️ ETC") return payer;
   if (type === "🛞 輪胎") return "tire";
   return SELECTABLE_SPLIT_TYPES.has(elements.expenseSplitType.value)
     ? elements.expenseSplitType.value
@@ -892,7 +908,11 @@ async function handleExpenseSubmit(event) {
   event.preventDefault();
   clearFormErrors();
   const type = elements.expenseItem.value;
-  const item = type === "其他" ? elements.customExpenseItem.value.trim() : type;
+  const etcOwner = ETC_FORM_OWNERS.get(type);
+  const item = etcOwner
+    ? ETC_ITEM
+    : (type === "其他" ? elements.customExpenseItem.value.trim() : type);
+  const payer = etcOwner ? "Ken" : elements.expensePayer.value;
   const amount = Math.round(safeNumber(elements.expenseAmount.value, NaN));
   if (!item) {
     showFieldError(elements.customExpenseError, "請輸入項目名稱。");
@@ -912,8 +932,8 @@ async function handleExpenseSubmit(event) {
     id: editingExpenseId || newId("expense"),
     item,
     amount,
-    user: elements.expensePayer.value,
-    splitType: selectedExpenseSplitType(type, elements.expensePayer.value),
+    user: payer,
+    splitType: selectedExpenseSplitType(type),
     createdAt: existing?.createdAt || new Date().toISOString(),
     createdBy: existing?.createdBy || currentUser.uid,
     updatedAt: editingExpenseId ? new Date().toISOString() : null
@@ -947,11 +967,14 @@ function startExpenseEdit(id) {
   }
   resetMileageForm();
   editingExpenseId = id;
-  const knownItem = Object.prototype.hasOwnProperty.call(ITEM_LABELS, expense.item);
-  elements.expenseItem.value = knownItem ? expense.item : "其他";
+  const isEtcExpense = expense.item === ETC_ITEM || ETC_FORM_OWNERS.has(expense.item);
+  const knownItem = isEtcExpense || Object.prototype.hasOwnProperty.call(ITEM_LABELS, expense.item);
+  elements.expenseItem.value = isEtcExpense
+    ? (expense.splitType === "Terence" ? "🛣️ ETC-Terence" : "🛣️ ETC-Ken")
+    : (knownItem ? expense.item : "其他");
   if (!knownItem) elements.customExpenseItem.value = displayItemName(expense.item);
   elements.expenseAmount.value = expense.amount;
-  elements.expensePayer.value = expense.user;
+  elements.expensePayer.value = isEtcExpense ? "Ken" : expense.user;
   configureExpenseSplit();
   if (!elements.expenseSplitType.disabled && SELECTABLE_SPLIT_TYPES.has(expense.splitType)) {
     elements.expenseSplitType.value = expense.splitType;

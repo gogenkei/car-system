@@ -50,6 +50,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat("zh-TW", {
   hour: "2-digit",
   minute: "2-digit"
 });
+const DEFAULT_DOCUMENT_TITLE = document.title;
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
@@ -132,7 +133,12 @@ const elements = {
   confirmDialog: document.querySelector("#confirmDialog"),
   confirmTitle: document.querySelector("#confirmTitle"),
   confirmMessage: document.querySelector("#confirmMessage"),
-  confirmAcceptButton: document.querySelector("#confirmAcceptButton")
+  confirmAcceptButton: document.querySelector("#confirmAcceptButton"),
+  reportDialog: document.querySelector("#reportDialog"),
+  reportDialogTitle: document.querySelector("#reportDialogTitle"),
+  reportCloseButton: document.querySelector("#reportCloseButton"),
+  reportPrintButton: document.querySelector("#reportPrintButton"),
+  monthlyReport: document.querySelector("#monthlyReport")
 };
 
 let currentUser = null;
@@ -571,6 +577,290 @@ function snapshotValue(snapshot, key, fallback = 0) {
   return safeNumber(snapshot?.[key], fallback);
 }
 
+function snapshotNumber(snapshot, key, fallback = 0) {
+  const value = snapshot?.[key];
+  if (value === "" || value === null || value === undefined) return fallback;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function reportDataForMonth(month) {
+  const snapshot = month?.snapshot || {};
+  const mileages = Array.isArray(snapshot.mileages) ? snapshot.mileages : [];
+  const expenses = Array.isArray(snapshot.expenses) ? snapshot.expenses : [];
+  const mTkm = snapshotNumber(snapshot, "mTkm");
+  const mKkm = snapshotNumber(snapshot, "mKkm");
+  const totalKm = mTkm + mKkm;
+  const derivedExpense = expenses.reduce((sum, expense) => sum + safeNumber(expense.amount), 0);
+  const derivedCharging = expenses.reduce((sum, expense) => (
+    displayItemName(expense.item).includes("充電") ? sum + safeNumber(expense.amount) : sum
+  ), 0);
+  const totalExpense = snapshotNumber(snapshot, "totalExp", derivedExpense);
+  const totalCharging = snapshotNumber(snapshot, "totalCharging", derivedCharging);
+  const totalOtherExpense = snapshotNumber(snapshot, "totalOtherExpense", Math.max(0, totalExpense - totalCharging));
+  const terencePaid = snapshotNumber(snapshot, "tPaid");
+  const kenPaid = snapshotNumber(snapshot, "kPaid");
+  const derivedKenResponsibility = expenses.reduce((sum, expense) => sum + safeNumber(expense.kenShare), 0);
+  const kenResponsibility = snapshotNumber(snapshot, "kResponsibility", derivedKenResponsibility);
+  const terenceResponsibility = totalExpense - kenResponsibility;
+  const netFlow = snapshotNumber(snapshot, "netFlow", kenResponsibility - kenPaid);
+  const finalAmount = Math.round(Math.abs(netFlow));
+  const finalPayer = netFlow > 0 ? "Ken" : netFlow < 0 ? "Terence" : null;
+  const finalReceiver = netFlow > 0 ? "Terence" : netFlow < 0 ? "Ken" : null;
+  const finalAction = finalPayer ? `${finalPayer} 應付給 ${finalReceiver}` : "雙方帳目平衡";
+  const categories = new Map();
+
+  expenses.forEach((expense) => {
+    const label = displayItemName(expense.item);
+    categories.set(label, (categories.get(label) || 0) + safeNumber(expense.amount));
+  });
+
+  return {
+    month,
+    snapshot,
+    mileages,
+    expenses,
+    mTkm,
+    mKkm,
+    totalKm,
+    totalExpense,
+    totalCharging,
+    totalOtherExpense,
+    terencePaid,
+    kenPaid,
+    kenResponsibility,
+    terenceResponsibility,
+    netFlow,
+    finalAmount,
+    finalPayer,
+    finalReceiver,
+    finalAction,
+    categories: [...categories.entries()].sort((left, right) => right[1] - left[1])
+  };
+}
+
+function appendTextElement(parent, tagName, className, text) {
+  const element = document.createElement(tagName);
+  if (className) element.className = className;
+  element.textContent = text;
+  parent.append(element);
+  return element;
+}
+
+function appendReportMetric(parent, label, value, note) {
+  const metric = document.createElement("section");
+  metric.className = "report-metric";
+  appendTextElement(metric, "span", "report-metric-label", label);
+  appendTextElement(metric, "strong", "report-metric-value", value);
+  appendTextElement(metric, "span", "report-metric-note", note);
+  parent.append(metric);
+}
+
+function appendReportSectionHeading(parent, eyebrow, title, note = "") {
+  const heading = document.createElement("header");
+  heading.className = "report-section-heading";
+  const text = document.createElement("div");
+  appendTextElement(text, "span", "report-section-kicker", eyebrow);
+  appendTextElement(text, "h2", "", title);
+  heading.append(text);
+  if (note) appendTextElement(heading, "p", "", note);
+  parent.append(heading);
+}
+
+function appendTableCell(row, tagName, text, scope = "") {
+  const cell = document.createElement(tagName);
+  if (scope) cell.scope = scope;
+  cell.textContent = text;
+  row.append(cell);
+}
+
+function appendReportTable(parent, columns, rows, emptyMessage) {
+  const wrap = document.createElement("div");
+  wrap.className = "report-table-wrap";
+  if (!rows.length) {
+    appendTextElement(wrap, "p", "report-empty", emptyMessage);
+    parent.append(wrap);
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.className = "report-table";
+  const head = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  columns.forEach((column) => appendTableCell(headRow, "th", column, "col"));
+  head.append(headRow);
+  const body = document.createElement("tbody");
+  rows.forEach((values) => {
+    const row = document.createElement("tr");
+    values.forEach((value) => appendTableCell(row, "td", value));
+    body.append(row);
+  });
+  table.append(head, body);
+  wrap.append(table);
+  parent.append(wrap);
+}
+
+function renderMonthlyReport(month) {
+  const data = reportDataForMonth(month);
+  const report = elements.monthlyReport;
+  report.replaceChildren();
+  report.dataset.monthId = String(month.id || month.label || "");
+  report.dataset.monthLabel = month.label || "歷史月份";
+
+  const cover = document.createElement("section");
+  cover.className = "report-page report-cover";
+  const masthead = document.createElement("header");
+  masthead.className = "report-masthead";
+  const mastheadText = document.createElement("div");
+  appendTextElement(mastheadText, "span", "report-kicker", "MONTHLY MOBILITY LEDGER");
+  appendTextElement(mastheadText, "h1", "", `${month.label || "未命名月份"} 車費與里程月報`);
+  appendTextElement(mastheadText, "p", "", "Terence × Ken · 封存月份對帳摘要");
+  const reportMark = document.createElement("div");
+  reportMark.className = "report-mark";
+  reportMark.setAttribute("aria-hidden", "true");
+  reportMark.textContent = "KM";
+  masthead.append(mastheadText, reportMark);
+  cover.append(masthead);
+
+  const settlement = document.createElement("section");
+  settlement.className = "report-settlement";
+  appendTextElement(settlement, "span", "report-settlement-label", "本月最終結算");
+  appendTextElement(settlement, "strong", "report-settlement-action", data.finalAction);
+  appendTextElement(settlement, "strong", "report-settlement-amount", formatCurrency(data.finalAmount));
+  appendTextElement(
+    settlement,
+    "p",
+    "",
+    data.finalPayer ? `${data.finalPayer} 匯款給 ${data.finalReceiver} 後，本月帳目即完成結清。` : "雙方本月先付金額與應分擔金額已相抵。"
+  );
+  cover.append(settlement);
+
+  const metrics = document.createElement("div");
+  metrics.className = "report-metric-grid";
+  appendReportMetric(metrics, "總里程", `${formatNumber(data.totalKm)} km`, `Terence ${formatNumber(data.mTkm)} · Ken ${formatNumber(data.mKkm)}`);
+  appendReportMetric(metrics, "充電支出", formatCurrency(data.totalCharging), "依里程或紀錄規則分攤");
+  appendReportMetric(metrics, "其他支出", formatCurrency(data.totalOtherExpense), "車貸、保險、ETC 與其他");
+  appendReportMetric(metrics, "總支出", formatCurrency(data.totalExpense), `${data.expenses.length} 筆費用紀錄`);
+  cover.append(metrics);
+
+  const overview = document.createElement("div");
+  overview.className = "report-overview-grid";
+  const mileagePanel = document.createElement("section");
+  mileagePanel.className = "report-panel";
+  appendReportSectionHeading(mileagePanel, "DISTANCE", "里程貢獻", "本月駕駛占比");
+  const totalForShare = data.totalKm || 1;
+  const terenceShare = data.totalKm ? (data.mTkm / totalForShare) * 100 : 50;
+  const kenShare = 100 - terenceShare;
+  const splitTrack = document.createElement("div");
+  splitTrack.className = "report-split-track";
+  splitTrack.setAttribute("role", "img");
+  splitTrack.setAttribute("aria-label", `Terence ${terenceShare.toFixed(1)}%，Ken ${kenShare.toFixed(1)}%`);
+  const splitTerence = document.createElement("span");
+  splitTerence.className = "report-split-terence";
+  splitTerence.style.width = `${terenceShare}%`;
+  const splitKen = document.createElement("span");
+  splitKen.className = "report-split-ken";
+  splitKen.style.width = `${kenShare}%`;
+  splitTrack.append(splitTerence, splitKen);
+  mileagePanel.append(splitTrack);
+  const splitLegend = document.createElement("div");
+  splitLegend.className = "report-split-legend";
+  appendTextElement(splitLegend, "span", "report-legend-terence", `Terence ${terenceShare.toFixed(1)}%`);
+  appendTextElement(splitLegend, "span", "report-legend-ken", `Ken ${kenShare.toFixed(1)}%`);
+  mileagePanel.append(splitLegend);
+
+  const categoryPanel = document.createElement("section");
+  categoryPanel.className = "report-panel";
+  appendReportSectionHeading(categoryPanel, "SPENDING", "費用分類", "依金額由高至低");
+  const categoryList = document.createElement("div");
+  categoryList.className = "report-category-list";
+  const reportCategories = data.categories.length > 6
+    ? [
+        ...data.categories.slice(0, 5),
+        ["其他項目", data.categories.slice(5).reduce((sum, category) => sum + category[1], 0)]
+      ]
+    : data.categories;
+  if (!reportCategories.length) {
+    appendTextElement(categoryList, "p", "report-empty", "本月沒有費用紀錄");
+  } else {
+    reportCategories.forEach(([label, value], index) => {
+      const row = document.createElement("div");
+      row.className = "report-category-row";
+      const labelRow = document.createElement("div");
+      appendTextElement(labelRow, "span", "", label);
+      appendTextElement(labelRow, "strong", "", formatCurrency(value));
+      const bar = document.createElement("div");
+      bar.className = "report-category-bar";
+      const fill = document.createElement("span");
+      fill.dataset.tone = String(index % 4);
+      fill.style.width = `${data.totalExpense > 0 ? Math.max(3, (value / data.totalExpense) * 100) : 0}%`;
+      bar.append(fill);
+      row.append(labelRow, bar);
+      categoryList.append(row);
+    });
+  }
+  categoryPanel.append(categoryList);
+  overview.append(mileagePanel, categoryPanel);
+  cover.append(overview);
+
+  const settlementPanel = document.createElement("section");
+  settlementPanel.className = "report-panel report-clearing";
+  appendReportSectionHeading(settlementPanel, "CLEARING", "雙方對帳核算", "先付代墊額、依規則應分擔與最終差額");
+  appendReportTable(settlementPanel, ["成員", "本月先付", "應分擔", "淨結算"], [
+    ["Terence", formatCurrency(data.terencePaid), formatCurrency(data.terenceResponsibility), data.finalPayer === "Terence" ? `應付 ${formatCurrency(data.finalAmount)}` : data.finalReceiver === "Terence" ? `應收 ${formatCurrency(data.finalAmount)}` : "已平衡"],
+    ["Ken", formatCurrency(data.kenPaid), formatCurrency(data.kenResponsibility), data.finalPayer === "Ken" ? `應付 ${formatCurrency(data.finalAmount)}` : data.finalReceiver === "Ken" ? `應收 ${formatCurrency(data.finalAmount)}` : "已平衡"]
+  ], "尚無結算資料");
+  cover.append(settlementPanel);
+  appendTextElement(cover, "footer", "report-footer", `車用里程計費 · ${month.label || "歷史月報"} · 產生於 ${formatDateTime(new Date().toISOString())}`);
+  report.append(cover);
+
+  const mileagePage = document.createElement("section");
+  mileagePage.className = "report-page report-detail-page";
+  appendReportSectionHeading(mileagePage, "MILEAGE LOG", "里程接力明細", `${data.mileages.length} 筆紀錄 · 合計 ${formatNumber(data.totalKm)} km`);
+  appendReportTable(mileagePage, ["駕駛", "起始里程", "結束里程", "當次小計", "記錄時間"], data.mileages.map((mileage) => [
+    mileage.user || "未標示",
+    `${formatNumber(mileage.start)} km`,
+    `${formatNumber(mileage.end)} km`,
+    `${formatNumber(mileage.diff)} km`,
+    formatDateTime(mileage.createdAt)
+  ]), "本月沒有里程紀錄");
+  appendTextElement(mileagePage, "footer", "report-footer", `${month.label || "歷史月報"} · 里程明細`);
+  report.append(mileagePage);
+
+  const expensePage = document.createElement("section");
+  expensePage.className = "report-page report-detail-page report-expense-page";
+  appendReportSectionHeading(expensePage, "EXPENSE LOG", "費用支出與拆帳明細", `${data.expenses.length} 筆紀錄 · 合計 ${formatCurrency(data.totalExpense)}`);
+  appendReportTable(expensePage, ["費用項目", "總金額", "代墊人", "分攤規則", "Ken 應分擔", "記錄時間"], data.expenses.map((expense) => [
+    displayItemName(expense.item),
+    formatCurrency(expense.amount),
+    expense.user || expense.payer || "未標示",
+    expense.rule || splitRuleText(expense.splitType, data.totalKm ? data.mKkm / data.totalKm : 0.5, snapshotNumber(data.snapshot, "tyreRatioK", 0.5)),
+    formatCurrency(expense.kenShare),
+    formatDateTime(expense.createdAt)
+  ]), "本月沒有費用紀錄");
+  appendTextElement(expensePage, "footer", "report-footer", `${month.label || "歷史月報"} · 費用明細`);
+  report.append(expensePage);
+
+  elements.reportDialogTitle.textContent = `${month.label || "歷史月份"} 月報預覽`;
+}
+
+function openMonthlyReport(monthId) {
+  const month = databaseState.historyMonths.find((entry) => String(entry.id || entry.label || "") === monthId);
+  if (!month) {
+    showToast("找不到這個月份的封存資料。");
+    return;
+  }
+  renderMonthlyReport(month);
+  if (!elements.reportDialog.open) elements.reportDialog.showModal();
+}
+
+function printMonthlyReport() {
+  if (!elements.monthlyReport.childElementCount) return;
+  document.body.classList.add("report-printing");
+  document.title = `${elements.monthlyReport.dataset.monthLabel || "歷史月份"} 車費與里程月報`;
+  window.print();
+}
+
 function renderHistory() {
   elements.historyList.replaceChildren();
   if (!databaseState.historyMonths.length) {
@@ -580,6 +870,7 @@ function renderHistory() {
 
   [...databaseState.historyMonths].reverse().forEach((month) => {
     const snapshot = month.snapshot || {};
+    const reportData = reportDataForMonth(month);
     const card = document.createElement("details");
     card.className = "history-card";
     const summary = document.createElement("summary");
@@ -592,7 +883,7 @@ function renderHistory() {
     amount.className = "history-amount";
     title.textContent = month.label || "未命名月份";
     result.textContent = snapshot.finalActionStr || "查看結算內容";
-    amount.textContent = formatCurrency(Math.abs(snapshotValue(snapshot, "netFlow")));
+    amount.textContent = formatCurrency(reportData.finalAmount);
     text.append(title, result);
     summaryGrid.append(text, amount);
     summary.append(summaryGrid);
@@ -600,10 +891,10 @@ function renderHistory() {
     const detail = document.createElement("div");
     detail.className = "history-detail";
     const values = [
-      ["Terence 里程", `${formatNumber(snapshotValue(snapshot, "mTkm"))} km`],
-      ["Ken 里程", `${formatNumber(snapshotValue(snapshot, "mKkm"))} km`],
-      ["Terence 先付", formatCurrency(snapshotValue(snapshot, "tPaid"))],
-      ["Ken 先付", formatCurrency(snapshotValue(snapshot, "kPaid"))]
+      ["總里程", `${formatNumber(reportData.totalKm)} km`],
+      ["總支出", formatCurrency(reportData.totalExpense)],
+      ["Terence 先付", formatCurrency(reportData.terencePaid)],
+      ["Ken 先付", formatCurrency(reportData.kenPaid)]
     ];
     values.forEach(([label, value]) => {
       const item = document.createElement("div");
@@ -614,7 +905,33 @@ function renderHistory() {
       item.append(itemLabel, itemValue);
       detail.append(item);
     });
-    card.append(summary, detail);
+    const split = document.createElement("div");
+    split.className = "history-mileage-split";
+    const splitLabel = document.createElement("div");
+    const totalKm = reportData.totalKm || 1;
+    const terencePercent = reportData.totalKm ? (reportData.mTkm / totalKm) * 100 : 50;
+    appendTextElement(splitLabel, "span", "", `Terence ${formatNumber(reportData.mTkm)} km`);
+    appendTextElement(splitLabel, "span", "", `Ken ${formatNumber(reportData.mKkm)} km`);
+    const track = document.createElement("div");
+    track.className = "history-mileage-track";
+    track.setAttribute("role", "img");
+    track.setAttribute("aria-label", `Terence ${terencePercent.toFixed(1)}%，Ken ${(100 - terencePercent).toFixed(1)}%`);
+    const first = document.createElement("span");
+    first.style.width = `${terencePercent}%`;
+    const second = document.createElement("span");
+    second.style.width = `${100 - terencePercent}%`;
+    track.append(first, second);
+    split.append(splitLabel, track);
+    const actions = document.createElement("div");
+    actions.className = "history-actions";
+    const reportButton = document.createElement("button");
+    reportButton.type = "button";
+    reportButton.className = "button button-primary";
+    reportButton.dataset.action = "open-month-report";
+    reportButton.dataset.monthId = String(month.id || month.label || "");
+    reportButton.textContent = "預覽與輸出月報";
+    actions.append(reportButton);
+    card.append(summary, detail, split, actions);
     elements.historyList.append(card);
   });
 }
@@ -1303,6 +1620,7 @@ function bindEvents() {
       if (actionButton.dataset.action === "edit-expense") startExpenseEdit(actionButton.dataset.id);
       if (actionButton.dataset.action === "delete-expense") await deleteExpense(actionButton.dataset.id);
       if (actionButton.dataset.action === "delete-mileage") await deleteMileage(actionButton.dataset.id);
+      if (actionButton.dataset.action === "open-month-report") openMonthlyReport(actionButton.dataset.monthId);
     } catch {
       // mutateDatabase has already surfaced a user-facing error.
     }
@@ -1333,6 +1651,12 @@ function bindEvents() {
     event.target.value = "";
   });
   elements.resetSystemButton.addEventListener("click", () => resetSystem().catch(() => {}));
+  elements.reportCloseButton.addEventListener("click", () => elements.reportDialog.close());
+  elements.reportPrintButton.addEventListener("click", printMonthlyReport);
+  window.addEventListener("afterprint", () => {
+    document.body.classList.remove("report-printing");
+    document.title = DEFAULT_DOCUMENT_TITLE;
+  });
   window.addEventListener("beforeunload", (event) => {
     const hasDraft = elements.endMileage.value.trim()
       || elements.expenseAmount.value.trim()
@@ -1361,6 +1685,31 @@ const localPreview = location.hostname === "127.0.0.1"
 if (localPreview) {
   const previewRole = new URLSearchParams(location.search).get("role") === "member" ? "member" : "admin";
   const previewName = previewRole === "member" ? "Ken" : "Terence";
+  const previewHistoryMileages = Array.from({ length: 34 }, (_, index) => {
+    const start = 92190 + (index * 185);
+    const diff = index % 2 === 0 ? 236 : 137;
+    return {
+      user: index % 2 === 0 ? "Terence" : "Ken",
+      start,
+      end: start + diff,
+      diff,
+      createdAt: `2026-07-${String(Math.min(31, index + 1)).padStart(2, "0")}T18:20:00+08:00`
+    };
+  });
+  const previewHistoryExpenses = Array.from({ length: 42 }, (_, index) => {
+    const charging = index > 2;
+    const item = charging ? "⚡ 充電" : ["🚗 車貸", "🛡️ 保險", "🛣️ ETC"][index];
+    const amount = charging ? 80 + ((index * 37) % 280) : [20200, 3656, 617][index];
+    return {
+      item,
+      amount,
+      payer: index % 7 === 0 ? "Terence" : "Ken",
+      splitType: charging ? "month_mileage" : index < 2 ? "23_13" : "Terence",
+      rule: charging ? "本月里程比例，Ken 26.9%" : index < 2 ? "Terence 2/3、Ken 1/3" : "全部由 Terence 負擔",
+      kenShare: charging ? Math.round(amount * 0.269) : index < 2 ? Math.round(amount / 3) : 0,
+      createdAt: `2026-07-${String(Math.min(31, index + 1)).padStart(2, "0")}T20:15:00+08:00`
+    };
+  });
   currentUser = { uid: "local-preview", displayName: previewName, email: "preview@localhost" };
   authorization = { active: true, role: previewRole, name: previewName };
   databaseState = normalizeDatabase({
@@ -1373,6 +1722,27 @@ if (localPreview) {
     expenseList: [
       { id: "preview-expense-1", item: "⚡ 充電", amount: 680, user: "Terence", splitType: "month_mileage", createdBy: "terence-preview", createdAt: "2026-08-17T09:10:00+08:00" },
       { id: "preview-expense-2", item: "🛣️ ETC", amount: 240, user: "Ken", splitType: "Ken", createdBy: "local-preview", createdAt: "2026-08-17T10:25:00+08:00" }
+    ],
+    historyMonths: [
+      {
+        id: "preview-history-2026-07",
+        label: "2026年7月",
+        timestamp: new Date("2026-08-01T13:30:00+08:00").getTime(),
+        snapshot: {
+          mTkm: 4635,
+          mKkm: 1708,
+          tPaid: 762,
+          kPaid: 34182,
+          totalCharging: 10471,
+          totalOtherExpense: 24473,
+          totalExp: 34944,
+          kResponsibility: 10966,
+          netFlow: -23216,
+          finalActionStr: "Terence 應付給 Ken NT$23,216",
+          mileages: previewHistoryMileages,
+          expenses: previewHistoryExpenses
+        }
+      }
     ]
   });
   calculatedState = calculateDatabase(databaseState);

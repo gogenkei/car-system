@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+service-account*.json
+*-service-account.json
+nas-backup/run-backup.sh
+車費系統高級全備份*.json
+car-mileage-*.json

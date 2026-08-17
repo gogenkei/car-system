@@ -1,0 +1,14 @@
+{
+  "name": "car-mileage-nas-backup",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "firebase-admin": "14.2.0"
+  },
+  "scripts": {
+    "backup": "node backup-firestore.mjs"
+  }
+}

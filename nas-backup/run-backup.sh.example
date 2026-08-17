@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+export GOOGLE_APPLICATION_CREDENTIALS="/volume1/secure/firebase/car-mileage-service-account.json"
+export FIREBASE_PROJECT_ID="track-car-spending"
+export FIRESTORE_DOCUMENT_PATH="car_sharing_system/v5_database_premium"
+export CAR_BACKUP_DIR="/volume1/backup/car-mileage"
+
+cd "/volume1/docker/car-mileage-backup"
+/usr/local/bin/node backup-firestore.mjs

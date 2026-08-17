@@ -1,0 +1,72 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userProfile() {
+      return get(/databases/$(database)/documents/authorized_users/$(request.auth.uid));
+    }
+
+    function isAuthorized() {
+      return signedIn()
+        && userProfile().data.active == true;
+    }
+
+    function isAdmin() {
+      return isAuthorized()
+        && userProfile().data.role == 'admin';
+    }
+
+    function validDatabaseShape() {
+      return request.resource.data.schemaVersion is int
+        && request.resource.data.revision is int
+        && request.resource.data.systemState is map
+        && request.resource.data.mileageList is list
+        && request.resource.data.expenseList is list
+        && request.resource.data.historyMonths is list;
+    }
+
+    function validRevisionUpdate() {
+      return request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function memberUpdateOnlyTouchesCurrentRecords() {
+      return userProfile().data.role == 'member'
+        && request.resource.data.systemState == resource.data.systemState
+        && request.resource.data.historyMonths == resource.data.historyMonths
+        && request.resource.data.mileageList.size() >= resource.data.mileageList.size()
+        && request.resource.data.expenseList.size() >= resource.data.expenseList.size()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'schemaVersion',
+          'revision',
+          'mileageList',
+          'expenseList',
+          'updatedAt',
+          'updatedBy'
+        ]);
+    }
+
+    match /authorized_users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /car_sharing_system/v5_database_premium {
+      allow read: if isAuthorized();
+      allow create: if isAdmin() && validDatabaseShape();
+      allow update: if isAuthorized()
+        && validDatabaseShape()
+        && validRevisionUpdate()
+        && (isAdmin() || memberUpdateOnlyTouchesCurrentRecords());
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -172,6 +172,7 @@
                   <option value="🚗 車貸">車貸</option>
                   <option value="🛡️ 保險">保險</option>
                   <option value="🛣️ ETC">ETC</option>
+                  <option value="🛞 輪胎">輪胎</option>
                   <option value="其他">其他</option>
                 </select>
               </div>
@@ -198,15 +199,13 @@
                 </div>
               </div>
               <div class="field">
-                <label for="expenseSplitType">分攤方式</label>
-                <select id="expenseSplitType" name="expenseSplitType" autocomplete="off">
+                <label id="expenseSplitTypeLabel" for="expenseSplitType">分攤方式</label>
+                <select id="expenseSplitType" name="expenseSplitType" autocomplete="off" aria-describedby="splitHelper">
                   <option value="month_mileage">依本月里程比例</option>
                   <option value="23_13">Terence 2/3、Ken 1/3</option>
                   <option value="50_50">雙方各一半</option>
-                  <option value="Terence">全部由 Terence 負擔</option>
-                  <option value="Ken">全部由 Ken 負擔</option>
-                  <option value="tire">依本期輪胎使用比例</option>
                 </select>
+                <div id="lockedSplitValue" class="locked-value" role="status" aria-labelledby="expenseSplitTypeLabel" hidden></div>
                 <p id="splitHelper" class="helper-text">充電固定依本月里程比例分攤。</p>
               </div>
               <button id="expenseSubmitButton" class="button button-primary button-wide" type="submit">儲存費用</button>

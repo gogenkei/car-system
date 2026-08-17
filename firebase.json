@@ -1,0 +1,18 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "auth": {
+    "providers": {
+      "anonymous": false,
+      "emailPassword": false,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "車用里程計費",
+        "supportEmail": "gogenkei@gmail.com",
+        "authorizedRedirectUris": [
+          "https://gogenkei.github.io/car-system/"
+        ]
+      }
+    }
+  }
+}

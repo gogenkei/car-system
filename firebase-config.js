@@ -3,8 +3,8 @@ export const firebaseConfig = {
   authDomain: "track-car-spending.firebaseapp.com",
   projectId: "track-car-spending",
   storageBucket: "track-car-spending.firebasestorage.app",
-  messagingSenderId: "706270939073",
-  appId: "1:706270939073:web:7df65a4db4f02f6b0f8fa0",
+  messagingSenderId: "706297039073",
+  appId: "1:706297039073:web:7df65a4db4f02f6b0f8fa0",
   measurementId: "G-2VZFZ00LJR"
 };
 

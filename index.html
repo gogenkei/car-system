@@ -305,15 +305,51 @@
     </form>
   </dialog>
 
+  <dialog id="historyEditDialog" class="correction-dialog" aria-labelledby="historyEditTitle">
+    <div class="correction-header">
+      <div><p class="eyebrow">歷史帳本 · 管理員更正</p><h2 id="historyEditTitle" tabindex="-1">更正費用</h2></div>
+      <button id="historyEditClose" class="button button-secondary" type="button">取消／關閉</button>
+    </div>
+    <p>草稿不會立即改變帳本。確認差額並儲存後，月報才會更新。里程與輪胎紀錄保持唯讀。</p>
+    <p id="historyEditError" class="field-error" role="alert" tabindex="-1"></p>
+    <p id="historyWriteState" role="status"></p>
+    <fieldset id="historyEditorControls" class="correction-controls">
+      <legend class="visually-hidden">歷史費用更正草稿</legend>
+      <section id="historyEditConflict" class="correction-conflict" role="status" hidden></section>
+      <form id="historyExpenseForm" class="correction-form">
+        <h3 id="historyExpenseFormTitle">新增一筆費用</h3>
+        <div class="correction-grid">
+          <div class="field"><label for="historyExpenseKind">費用項目</label><select id="historyExpenseKind" name="kind">
+            <option value="⚡ 充電">充電</option><option value="🚗 車貸">車貸</option><option value="🛡️ 保險">保險</option><option value="ETC-Terence">ETC — Terence 負擔</option><option value="ETC-Ken">ETC — Ken 負擔</option><option value="其他">其他</option>
+          </select></div>
+          <div id="historyCustomField" class="field" hidden><label for="historyExpenseCustom">項目名稱</label><input id="historyExpenseCustom" name="customItem" type="text" maxlength="60"></div>
+          <div class="field"><label for="historyExpenseAmount">金額（元）</label><input id="historyExpenseAmount" name="amount" type="number" inputmode="numeric" min="1" step="1" required></div>
+          <div class="field"><label for="historyExpensePayer">由誰先付款</label><select id="historyExpensePayer" name="payer"><option>Terence</option><option>Ken</option></select></div>
+          <div id="historySplitField" class="field"><label for="historyExpenseSplit">分攤方式</label><select id="historyExpenseSplit" name="split"><option value="month_mileage">依該月里程比例</option><option value="23_13">Terence 2/3、Ken 1/3</option><option value="50_50">雙方各一半</option></select></div>
+        </div>
+        <p id="historyRuleHelp" class="correction-note"></p>
+        <div class="correction-actions"><button id="historyExpenseStage" class="button button-primary" type="submit">加入草稿</button><button id="historyExpenseCancel" class="button button-secondary" type="button" hidden>取消這筆編輯</button></div>
+      </form>
+      <details class="correction-records" open><summary>費用明細與草稿</summary><p id="historyDraftCount" tabindex="-1" aria-live="polite"></p><ul id="historyExpenseList"></ul></details>
+      <div class="field"><label for="historyEditReason">更正原因</label><input id="historyEditReason" type="text" maxlength="200" placeholder="例如：補登月底保養費" required></div>
+      <div class="correction-actions"><button id="historyEditReview" class="button button-primary" type="button">預覽更正差額</button><button id="historyDraftDownload" class="button button-secondary" type="button">下載草稿</button></div>
+      <section id="historyEditPreview" class="correction-preview" tabindex="-1" hidden></section>
+      <button id="historyEditSave" class="button button-primary" type="button" hidden>確認儲存更正</button>
+      <details class="correction-audit"><summary>查看歷次更正紀錄</summary><div id="historyCorrectionLog"></div></details>
+    </fieldset>
+  </dialog>
+
   <dialog id="reportDialog" class="report-dialog" aria-labelledby="reportDialogTitle">
     <div class="report-dialog-toolbar">
       <div>
         <p class="eyebrow">歷史月報</p>
         <h2 id="reportDialogTitle">月報預覽</h2>
         <p>列印時可選擇「儲存為 PDF」。</p>
+        <p id="reportStaleNotice" role="status" hidden>帳本已更新，請更新月報後再列印。</p>
       </div>
       <div class="report-dialog-actions">
         <button id="reportCloseButton" class="button button-secondary" type="button">關閉</button>
+        <button id="reportRefreshButton" class="button button-secondary" type="button" hidden>更新月報</button>
         <button id="reportPrintButton" class="button button-primary" type="button">列印／儲存 PDF</button>
       </div>
     </div>

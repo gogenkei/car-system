@@ -18,6 +18,8 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { firebaseConfig, firestorePaths } from "./firebase-config.js";
+import { createHistoryEditor } from "./history-editor.mjs";
+import { fingerprint, monthKey, summarize, assertDocumentSize, prepareMonth } from "./history-corrections.mjs";
 
 const SCHEMA_VERSION = 3;
 const USERS = ["Terence", "Ken"];
@@ -151,6 +153,17 @@ let unsubscribeSnapshot = null;
 let editingMileageId = null;
 let editingExpenseId = null;
 let retryAction = null;
+let reportFingerprint = null;
+const historyEditor = createHistoryEditor({
+  database: () => databaseState,
+  actor: () => ({ uid: currentUser?.uid, role: authorization?.role, name: authorization?.name || currentUser?.displayName }),
+  writable: () => appReady && !saving,
+  newId: () => newId("correction"),
+  confirm: requestConfirmation,
+  toast: showToast,
+  download: downloadJson,
+  commit: (mutator) => mutateDatabase("更正歷史費用", mutator, { historicalCorrection: true })
+});
 
 function createEmptyDatabase() {
   return {
@@ -396,6 +409,7 @@ function setWritable(ready, message = null) {
   appReady = Boolean(ready);
   updateWriteControls();
   if (message) setSyncStatus(appReady ? "ready" : "error", message);
+  historyEditor.sync();
 }
 
 function setSaving(isSaving, message = "儲存中") {
@@ -605,8 +619,8 @@ function reportDataForMonth(month) {
   const terenceResponsibility = totalExpense - kenResponsibility;
   const netFlow = snapshotNumber(snapshot, "netFlow", kenResponsibility - kenPaid);
   const finalAmount = Math.round(Math.abs(netFlow));
-  const finalPayer = netFlow > 0 ? "Ken" : netFlow < 0 ? "Terence" : null;
-  const finalReceiver = netFlow > 0 ? "Terence" : netFlow < 0 ? "Ken" : null;
+  const finalPayer = finalAmount === 0 ? null : netFlow > 0 ? "Ken" : "Terence";
+  const finalReceiver = finalAmount === 0 ? null : netFlow > 0 ? "Terence" : "Ken";
   const finalAction = finalPayer ? `${finalPayer} 應付給 ${finalReceiver}` : "雙方帳目平衡";
   const categories = new Map();
 
@@ -701,6 +715,11 @@ function appendReportTable(parent, columns, rows, emptyMessage) {
 }
 
 function renderMonthlyReport(month) {
+  reportFingerprint = fingerprint(month);
+  document.body.classList.remove("report-stale");
+  document.querySelector("#reportStaleNotice").hidden = true;
+  document.querySelector("#reportRefreshButton").hidden = true;
+  elements.reportPrintButton.disabled = false;
   const data = reportDataForMonth(month);
   const report = elements.monthlyReport;
   report.replaceChildren();
@@ -715,6 +734,10 @@ function renderMonthlyReport(month) {
   appendTextElement(mastheadText, "span", "report-kicker", "MONTHLY MOBILITY LEDGER");
   appendTextElement(mastheadText, "h1", "", `${month.label || "未命名月份"} 車費與里程月報`);
   appendTextElement(mastheadText, "p", "", "Terence × Ken · 封存月份對帳摘要");
+  if (month.correctionVersion) {
+    const last = month.corrections?.at(-1);
+    appendTextElement(mastheadText, "p", "", `更正版本 ${month.correctionVersion} · ${last ? formatDateTime(last.createdAt) : ""}`);
+  }
   const reportMark = document.createElement("div");
   reportMark.className = "report-mark";
   reportMark.setAttribute("aria-hidden", "true");
@@ -731,7 +754,7 @@ function renderMonthlyReport(month) {
     settlement,
     "p",
     "",
-    data.finalPayer ? `${data.finalPayer} 匯款給 ${data.finalReceiver} 後，本月帳目即完成結清。` : "雙方本月先付金額與應分擔金額已相抵。"
+    data.finalPayer ? "以上為本月應付總額，未扣除雙方另行結清的款項；實際付款請另行確認。" : "雙方本月先付金額與應分擔金額已相抵。"
   );
   cover.append(settlement);
 
@@ -855,10 +878,32 @@ function openMonthlyReport(monthId) {
 }
 
 function printMonthlyReport() {
+  if (!refreshReportValidity()) {
+    showToast("帳本已更新，請先更新月報再列印。");
+    return;
+  }
   if (!elements.monthlyReport.childElementCount) return;
   document.body.classList.add("report-printing");
   document.title = `${elements.monthlyReport.dataset.monthLabel || "歷史月份"} 車費與里程月報`;
   window.print();
+}
+
+function refreshReportValidity() {
+  if (!reportFingerprint) return true;
+  const month = currentReportMonth();
+  const stale = !month || fingerprint(month) !== reportFingerprint;
+  elements.reportPrintButton.disabled = stale;
+  document.querySelector("#reportStaleNotice").hidden = !stale;
+  document.querySelector("#reportRefreshButton").hidden = !stale || !month;
+  document.body.classList.toggle("report-stale", stale && elements.reportDialog.open);
+  return !stale;
+}
+
+function currentReportMonth() {
+  const exact = databaseState.historyMonths.find((entry) => monthKey(entry) === elements.monthlyReport.dataset.monthId);
+  if (exact) return exact;
+  const matches = databaseState.historyMonths.filter((entry) => entry.label === elements.monthlyReport.dataset.monthLabel);
+  return matches.length === 1 ? matches[0] : null;
 }
 
 function renderHistory() {
@@ -931,6 +976,16 @@ function renderHistory() {
     reportButton.dataset.monthId = String(month.id || month.label || "");
     reportButton.textContent = "預覽與輸出月報";
     actions.append(reportButton);
+    if (isAdmin()) {
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className = "button button-secondary";
+      editButton.dataset.action = "correct-history-expenses";
+      editButton.dataset.monthId = monthKey(month);
+      editButton.textContent = "更正費用";
+      actions.append(editButton);
+    }
+    if (month.correctionVersion) appendTextElement(detail, "p", "", `已更正 ${month.correctionVersion} 次`);
     card.append(summary, detail, split, actions);
     elements.historyList.append(card);
   });
@@ -972,6 +1027,8 @@ function renderAll() {
   renderMonthRecords();
   renderHistory();
   renderAccount();
+  refreshReportValidity();
+  historyEditor.sync();
 }
 
 function setAddTab(tabName, focus = false) {
@@ -1018,11 +1075,20 @@ function assertWritable() {
   if (!currentUser || !authorization?.active) throw new Error("目前帳號沒有寫入權限。");
 }
 
-async function mutateDatabase(operationName, mutator) {
+async function mutateDatabase(operationName, mutator, { historicalCorrection = false } = {}) {
   assertWritable();
   setSaving(true, operationName);
+  let succeeded = false;
   try {
-    await runTransaction(db, async (transaction) => {
+    // History-only sandbox preview: the same mutator runs without contacting Firestore.
+    if (localPreview && historicalCorrection) {
+      const next = cloneDatabase(databaseState);
+      mutator(next, databaseState);
+      assertDocumentSize(next);
+      next.revision = databaseState.revision + 1;
+      databaseState = next;
+      renderAll();
+    } else await runTransaction(db, async (transaction) => {
       const snapshot = await transaction.get(databaseRef);
       if (!snapshot.exists()) throw new Error("雲端帳本不存在，已停止寫入以避免覆蓋資料。");
       const current = normalizeDatabase(snapshot.data());
@@ -1030,8 +1096,10 @@ async function mutateDatabase(operationName, mutator) {
       mutator(next, current);
       next.schemaVersion = SCHEMA_VERSION;
       next.revision = current.revision + 1;
+      if (historicalCorrection) assertDocumentSize(next);
       transaction.set(databaseRef, { ...next, updatedAt: serverTimestamp(), updatedBy: currentUser.uid });
     });
+    succeeded = true;
     showToast(`${operationName}完成`);
   } catch (error) {
     console.error(error);
@@ -1039,7 +1107,7 @@ async function mutateDatabase(operationName, mutator) {
     throw error;
   } finally {
     saving = false;
-    setWritable(appReady, appReady ? "已同步" : "等待重新同步");
+    setWritable(appReady, succeeded ? (localPreview ? "本機預覽，重新整理即還原" : "已同步") : "儲存失敗，請確認連線後重試");
   }
 }
 
@@ -1459,6 +1527,15 @@ async function importBackup(file) {
     return;
   }
   const normalized = normalizeDatabase(parsed);
+  try {
+    for (const month of normalized.historyMonths) {
+      if (month.correctionVersion != null || month.corrections != null) prepareMonth(month);
+    }
+    assertDocumentSize(normalized);
+  } catch (error) {
+    showToast(`備份未還原：${error.message}`, 8000);
+    return;
+  }
   const confirmed = await requestConfirmation(
     "用備份取代雲端帳本？",
     `將還原 ${normalized.historyMonths.length} 個歷史月份、${normalized.mileageList.length} 筆里程與 ${normalized.expenseList.length} 筆費用。`,
@@ -1621,6 +1698,7 @@ function bindEvents() {
       if (actionButton.dataset.action === "delete-expense") await deleteExpense(actionButton.dataset.id);
       if (actionButton.dataset.action === "delete-mileage") await deleteMileage(actionButton.dataset.id);
       if (actionButton.dataset.action === "open-month-report") openMonthlyReport(actionButton.dataset.monthId);
+      if (actionButton.dataset.action === "correct-history-expenses") historyEditor.open(actionButton.dataset.monthId);
     } catch {
       // mutateDatabase has already surfaced a user-facing error.
     }
@@ -1652,6 +1730,12 @@ function bindEvents() {
   });
   elements.resetSystemButton.addEventListener("click", () => resetSystem().catch(() => {}));
   elements.reportCloseButton.addEventListener("click", () => elements.reportDialog.close());
+  elements.reportDialog.addEventListener("close", () => document.body.classList.remove("report-stale"));
+  document.querySelector("#reportRefreshButton").addEventListener("click", () => {
+    const month = currentReportMonth();
+    if (month) openMonthlyReport(monthKey(month));
+  });
+  window.addEventListener("beforeprint", refreshReportValidity);
   elements.reportPrintButton.addEventListener("click", printMonthlyReport);
   window.addEventListener("afterprint", () => {
     document.body.classList.remove("report-printing");
@@ -1662,7 +1746,8 @@ function bindEvents() {
       || elements.expenseAmount.value.trim()
       || elements.customExpenseItem.value.trim()
       || editingMileageId
-      || editingExpenseId;
+      || editingExpenseId
+      || historyEditor.hasDraft();
     if (!hasDraft) return;
     event.preventDefault();
     event.returnValue = "";
@@ -1745,6 +1830,12 @@ if (localPreview) {
       }
     ]
   });
+  // The report demo used decorative totals; corrections require internally consistent fixtures.
+  const demo = databaseState.historyMonths[0].snapshot;
+  demo.mTkm = demo.mileages.filter((entry) => entry.user === "Terence").reduce((sum, entry) => sum + entry.diff, 0);
+  demo.mKkm = demo.mileages.filter((entry) => entry.user === "Ken").reduce((sum, entry) => sum + entry.diff, 0);
+  Object.assign(demo, summarize(demo.expenses));
+  demo.finalActionStr = reportDataForMonth(databaseState.historyMonths[0]).finalAction;
   calculatedState = calculateDatabase(databaseState);
   showApp();
   renderAll();

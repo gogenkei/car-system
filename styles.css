@@ -1683,3 +1683,55 @@ fieldset:disabled {
     print-color-adjust: exact;
   }
 }
+
+/* Historical correction editor: matches the existing ledger surfaces and controls. */
+.correction-dialog {
+  width: min(900px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.correction-dialog::backdrop { background: rgb(0 0 0 / .55); }
+.correction-header, .correction-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.correction-header { justify-content: space-between; }
+.correction-header h2 { margin: 0; }
+.correction-controls { border: 0; min-width: 0; padding: 0; margin: 0; }
+.correction-form, .correction-preview, .correction-conflict {
+  padding: 20px; margin-block: 20px; background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md);
+}
+.correction-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.correction-dialog .field { min-width: 0; }
+.correction-dialog input, .correction-dialog select { width: 100%; min-width: 0; }
+.correction-dialog button { min-height: 44px; }
+.correction-note { color: var(--text-muted); }
+.correction-records, .correction-audit { margin-block: 24px; }
+.correction-records > summary, .correction-audit summary { cursor: pointer; padding-block: 12px; font-weight: 650; }
+#historyExpenseList { padding: 0; list-style: none; max-height: 360px; overflow-y: auto; overscroll-behavior: contain; }
+.correction-record { border-top: 1px solid var(--border); padding: 12px 4px; }
+.correction-record p { margin: 0 0 12px; }
+.correction-comparison { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; }
+.correction-comparison dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.correction-total { font-size: 1.25rem; font-weight: 700; }
+.correction-changes { padding-left: 24px; }
+.correction-changes li { margin-block: 16px; }
+.correction-changes p { margin: 4px 0; }
+#historyEditError:empty, #historyWriteState:empty { display: none; }
+#historyEditError, #reportStaleNotice { color: var(--danger); }
+.correction-dialog :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+@media (max-width: 600px) {
+  .correction-dialog { padding: 16px; }
+  .correction-grid { grid-template-columns: 1fr; }
+  .correction-form, .correction-preview, .correction-conflict { padding: 16px; }
+  .correction-comparison { grid-template-columns: 1fr; gap: 4px; }
+  .correction-comparison dd { text-align: left; margin-bottom: 12px; }
+}
+@media print {
+  #historyEditDialog { display: none !important; }
+  body.report-stale .monthly-report { display: none !important; }
+  body.report-stale::before { content: "帳本已更新，請先更新月報再列印。"; display: block; font-size: 20pt; }
+}

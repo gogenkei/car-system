@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f6f2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#111814" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f8fc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="車用帳本">
   <meta name="description" content="兩人共用的車輛里程與費用即時對帳工具">
   <title>車用里程計費</title>
-  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -55,6 +56,7 @@
     <nav class="desktop-nav" aria-label="主要導覽">
       <a href="#home" data-route="home" data-admin-only aria-current="page">本月</a>
       <a href="#add" data-route="add">新增紀錄</a>
+      <a href="#records" data-route="records">紀錄</a>
       <a href="#history" data-route="history" data-admin-only>歷史</a>
       <a href="#settings" data-route="settings">設定</a>
     </nav>
@@ -64,9 +66,20 @@
         <div class="page-heading">
           <div>
             <p class="eyebrow">本月即時對帳</p>
-            <h1 id="homeTitle">現在誰要付多少？</h1>
+            <h1 id="homeTitle">本月帳本</h1>
           </div>
           <a class="button button-primary desktop-only" href="#add" data-route="add">新增紀錄</a>
+        </div>
+
+        <div class="quick-actions" aria-label="快速新增">
+          <a class="quick-action" href="#add" data-route="add" data-add-tab="mileage">
+            <strong>記一筆里程</strong>
+            <span id="latestMileageSummary">目前儀表 0 km</span>
+          </a>
+          <a class="quick-action" href="#add" data-route="add" data-add-tab="expense">
+            <strong>記一筆費用</strong>
+            <span>充電、ETC 或其他支出</span>
+          </a>
         </div>
 
         <section class="balance-panel" aria-labelledby="balanceTitle">
@@ -94,16 +107,7 @@
           </section>
         </div>
 
-        <div class="quick-actions" aria-label="快速新增">
-          <a class="quick-action" href="#add" data-route="add" data-add-tab="mileage">
-            <strong>記一筆里程</strong>
-            <span id="latestMileageSummary">目前儀表 0 km</span>
-          </a>
-          <a class="quick-action" href="#add" data-route="add" data-add-tab="expense">
-            <strong>記一筆費用</strong>
-            <span>充電、ETC 或其他支出</span>
-          </a>
-        </div>
+
 
         <section class="section-block" aria-labelledby="recentTitle">
           <div class="section-heading">
@@ -124,14 +128,20 @@
           </div>
         </div>
 
-        <div class="segmented-control" role="tablist" aria-label="紀錄類型">
-          <button id="mileageTab" type="button" role="tab" aria-selected="true" aria-controls="mileagePanel">里程</button>
-          <button id="expenseTab" type="button" role="tab" aria-selected="false" aria-controls="expensePanel">費用</button>
+        <div id="entryChoices" class="entry-choices" aria-label="選擇新增類型">
+          <button id="mileageTab" class="entry-choice" type="button" data-route="add-mileage">
+            <span class="entry-symbol" aria-hidden="true">km</span><strong>記一筆里程</strong><span>輸入儀表總里程，自動算出本次里程</span><span class="entry-arrow" aria-hidden="true">→</span>
+          </button>
+          <button id="expenseTab" class="entry-choice" type="button" data-route="add-expense">
+            <span class="entry-symbol" aria-hidden="true">NT$</span><strong>記一筆費用</strong><span>充電、ETC、保險與其他支出</span><span class="entry-arrow" aria-hidden="true">→</span>
+          </button>
+          <a class="button button-secondary" href="#records" data-route="records">查看本月紀錄</a>
         </div>
+        <a id="entryBack" class="button button-secondary entry-back" href="#add" data-route="add" hidden>← 返回新增</a>
 
-        <section id="mileagePanel" class="form-panel" role="tabpanel" aria-labelledby="mileageTab">
+        <section id="mileagePanel" class="form-panel" aria-labelledby="mileageFormTitle" hidden>
           <div class="form-intro">
-            <h2 id="mileageFormTitle">記錄儀表讀數</h2>
+            <h2 id="mileageFormTitle" class="visually-hidden">記錄儀表讀數</h2>
             <p>只要輸入目前車上的總里程，系統會自動計算本次里程。</p>
           </div>
           <form id="mileageForm" novalidate>
@@ -146,21 +156,24 @@
               <div class="field">
                 <label for="endMileage">目前儀表總里程</label>
                 <div class="input-with-unit">
-                  <input id="endMileage" name="endMileage" type="number" inputmode="numeric" min="1" step="1" autocomplete="off" aria-describedby="mileageHelper mileageError" required>
+                  <input id="endMileage" name="endMileage" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" aria-describedby="mileageHelper mileageError" required>
                   <span aria-hidden="true">km</span>
                 </div>
+                <p id="mileagePreview" class="mileage-preview" aria-live="polite">輸入後顯示本次里程</p>
                 <p id="mileageHelper" class="helper-text">上次記錄：<span id="lastMileageHelper">0 km</span></p>
                 <p id="mileageError" class="field-error" role="alert" hidden></p>
               </div>
+              <button class="button button-secondary keyboard-dismiss" type="button" data-dismiss-keyboard>完成輸入・收起鍵盤</button>
+              <p id="mileageStatus" class="form-status" role="status" tabindex="-1" hidden></p>
               <button id="mileageSubmitButton" class="button button-primary button-wide" type="submit">儲存里程</button>
-              <button id="cancelMileageEditButton" class="button button-secondary button-wide" type="button" hidden>取消編輯</button>
+              <button id="cancelMileageEditButton" class="button button-secondary button-wide" type="button" hidden>放棄這次修改</button>
             </fieldset>
           </form>
         </section>
 
-        <section id="expensePanel" class="form-panel" role="tabpanel" aria-labelledby="expenseTab" hidden>
+        <section id="expensePanel" class="form-panel" aria-labelledby="expenseFormTitle" hidden>
           <div class="form-intro">
-            <h2 id="expenseFormTitle">記錄一筆費用</h2>
+            <h2 id="expenseFormTitle" class="visually-hidden">記錄一筆費用</h2>
             <p>選好項目與付款人，系統會立即套用對應的分攤方式。</p>
           </div>
           <form id="expenseForm" novalidate>
@@ -187,7 +200,7 @@
                   <label for="expenseAmount">金額</label>
                   <div class="input-with-prefix">
                     <span aria-hidden="true">NT$</span>
-                    <input id="expenseAmount" name="expenseAmount" type="number" inputmode="numeric" min="1" step="1" autocomplete="off" aria-describedby="expenseAmountError" required>
+                    <input id="expenseAmount" name="expenseAmount" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" aria-describedby="expenseAmountError" required>
                   </div>
                   <p id="expenseAmountError" class="field-error" role="alert" hidden></p>
                 </div>
@@ -209,12 +222,18 @@
                 <div id="lockedSplitValue" class="locked-value" role="status" aria-labelledby="expenseSplitTypeLabel" hidden></div>
                 <p id="splitHelper" class="helper-text">充電固定依本月里程比例分攤。</p>
               </div>
+              <button class="button button-secondary keyboard-dismiss" type="button" data-dismiss-keyboard>完成輸入・收起鍵盤</button>
+              <p id="expenseStatus" class="form-status" role="status" tabindex="-1" hidden></p>
               <button id="expenseSubmitButton" class="button button-primary button-wide" type="submit">儲存費用</button>
-              <button id="cancelExpenseEditButton" class="button button-secondary button-wide" type="button" hidden>取消編輯</button>
+              <button id="cancelExpenseEditButton" class="button button-secondary button-wide" type="button" hidden>放棄這次修改</button>
             </fieldset>
           </form>
         </section>
 
+      </section>
+
+      <section id="view-records" class="view" data-view="records" aria-labelledby="monthRecordsTitle" hidden>
+        <div class="page-heading compact"><div><p class="eyebrow">查詢與修改</p><h1>本月紀錄</h1></div><a class="button button-primary" href="#add" data-route="add">新增</a></div>
         <section class="section-block" aria-labelledby="monthRecordsTitle">
           <div class="section-heading">
             <div>
@@ -287,6 +306,7 @@
     <nav class="mobile-nav" aria-label="主要導覽">
       <a href="#home" data-route="home" data-admin-only aria-current="page"><span>本月</span></a>
       <a href="#add" data-route="add"><span>新增</span></a>
+      <a href="#records" data-route="records">紀錄</a>
       <a href="#history" data-route="history" data-admin-only><span>歷史</span></a>
       <a href="#settings" data-route="settings"><span id="mobileSettingsLabel">設定</span></a>
     </nav>

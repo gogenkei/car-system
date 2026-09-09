@@ -123,3 +123,13 @@ GitHub Repository > Settings > Pages，選擇要部署的 branch 與根目錄即
 ## NAS 自動備份
 
 請參考 [nas-backup/README.md](./nas-backup/README.md)。Service account JSON 不得提交到 GitHub。
+
+## 手機淺色介面
+
+固定使用白底藍色；新增入口、里程表單、費用表單與本月紀錄分開。表單期間隱藏主導覽，欄位不自動聚焦，提供收起鍵盤按鈕及內嵌錯誤提示。歷史月報的畫面及 PDF 同步採用淺色配色。
+
+新增路由為 `#add-mileage`、`#add-expense`、`#records`；原本 `#add` 為選擇類型入口。Ken 仍只可存取新增、自己的紀錄及帳號。
+
+本機 `?preview=1` 的新增、修改及歷史更正均只改示範資料，重新整理即還原。正式網域始終使用 Firebase 登入與交易。
+
+手機回歸測試：在本機伺服器啟動後，使用已安裝 Playwright 的 Node 執行 `tests/mobile-ui.cjs`。以 `LEDGER_TEST_URL` 指定本機網址；測試攔截 Firebase SDK 並使用模擬交易，涵蓋失敗保留、重複儲存、角色權限、各種寬度與月報 PDF。iPhone 主畫面捷徑與實體鍵盤需另行實機驗收。

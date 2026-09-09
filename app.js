@@ -38,7 +38,7 @@ const ETC_FORM_OWNERS = new Map([
   ["🛣️ ETC-Ken", "Ken"]
 ]);
 const SELECTABLE_SPLIT_TYPES = new Set(["month_mileage", "23_13", "50_50"]);
-const ROUTES = new Set(["home", "add", "history", "settings"]);
+const ROUTES = new Set(["home", "add", "add-mileage", "add-expense", "records", "history", "settings"]);
 const currencyFormatter = new Intl.NumberFormat("zh-TW", {
   style: "currency",
   currency: "TWD",
@@ -416,6 +416,8 @@ function setSaving(isSaving, message = "儲存中") {
   saving = isSaving;
   updateWriteControls();
   if (isSaving) setSyncStatus("saving", message);
+  elements.mileageForm.setAttribute("aria-busy", String(isSaving));
+  elements.expenseForm.setAttribute("aria-busy", String(isSaving));
 }
 
 function showGate(message, options = {}) {
@@ -437,6 +439,14 @@ function showApp() {
 }
 
 function showToast(message, duration = 3200) {
+  const panel = currentRoute() === "add-mileage" ? "mileage" : currentRoute() === "add-expense" ? "expense" : null;
+  if (panel) {
+    const status = document.querySelector(`#${panel}Status`);
+    status.textContent = message;
+    status.hidden = false;
+    status.dataset.error = String(!message.endsWith("完成"));
+    return;
+  }
   elements.toastRegion.replaceChildren();
   const toast = document.createElement("div");
   toast.className = "toast";
@@ -448,6 +458,8 @@ function showToast(message, duration = 3200) {
 function showFieldError(element, message) {
   element.textContent = message;
   element.hidden = !message;
+  const field = document.querySelector(`[aria-describedby~="${element.id}"]`);
+  if (field) field.setAttribute("aria-invalid", String(Boolean(message)));
 }
 
 function clearFormErrors() {
@@ -577,7 +589,7 @@ function renderMonthRecords() {
   if (!records.length) {
     elements.monthRecords.append(emptyState(
       isAdmin() ? "本月還沒有紀錄" : "你還沒有新增紀錄",
-      "使用上方表單新增里程或費用。"
+      "點選「新增」記錄里程或費用。"
     ));
     return;
   }
@@ -1031,17 +1043,6 @@ function renderAll() {
   historyEditor.sync();
 }
 
-function setAddTab(tabName, focus = false) {
-  const mileageSelected = tabName !== "expense";
-  elements.mileageTab.setAttribute("aria-selected", String(mileageSelected));
-  elements.expenseTab.setAttribute("aria-selected", String(!mileageSelected));
-  elements.mileageTab.tabIndex = mileageSelected ? 0 : -1;
-  elements.expenseTab.tabIndex = mileageSelected ? -1 : 0;
-  elements.mileagePanel.hidden = !mileageSelected;
-  elements.expensePanel.hidden = mileageSelected;
-  if (focus) (mileageSelected ? elements.endMileage : elements.expenseAmount).focus();
-}
-
 function currentRoute() {
   const route = location.hash.replace(/^#\/?/, "");
   return ROUTES.has(route) ? route : "home";
@@ -1049,23 +1050,35 @@ function currentRoute() {
 
 function navigate(route, options = {}) {
   const { focusMain = true, addTab = null } = options;
-  const allowedRoutes = isAdmin() ? ROUTES : new Set(["add", "settings"]);
-  const defaultRoute = isAdmin() ? "home" : "add";
-  const safeRoute = allowedRoutes.has(route) ? route : defaultRoute;
-  document.querySelectorAll("[data-view]").forEach((view) => {
-    view.hidden = view.dataset.view !== safeRoute;
+  if (saving) return;
+  if (route === "add" && addTab) route = `add-${addTab}`;
+  const allowedRoutes = isAdmin() ? ROUTES : new Set(["add", "add-mileage", "add-expense", "records", "settings"]);
+  const safeRoute = allowedRoutes.has(route) ? route : (isAdmin() ? "home" : "add");
+  const entryMode = safeRoute.startsWith("add-");
+  const viewRoute = entryMode ? "add" : safeRoute;
+  document.activeElement?.blur();
+  document.body.classList.toggle("entry-mode", entryMode);
+  document.body.classList.remove("input-active");
+  document.querySelectorAll("[data-view]").forEach(view => view.hidden = view.dataset.view !== viewRoute);
+  document.querySelectorAll("nav [data-route]").forEach(button => {
+    if (button.dataset.route === viewRoute) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
   });
-  document.querySelectorAll("[data-route]").forEach((button) => {
-    if (button.closest("nav")) {
-      if (button.dataset.route === safeRoute) button.setAttribute("aria-current", "page");
-      else button.removeAttribute("aria-current");
-    }
-  });
+  document.querySelector("#entryChoices").hidden = entryMode;
+  document.querySelector("#entryBack").hidden = !entryMode;
+  document.querySelector("#addTitle").textContent = entryMode ? (safeRoute === "add-mileage" ? "記一筆里程" : "記一筆費用") : "今天要記什麼？";
+  elements.mileagePanel.hidden = safeRoute !== "add-mileage";
+  elements.expensePanel.hidden = safeRoute !== "add-expense";
+  const back = document.querySelector("#entryBack");
+  const editing = safeRoute === "add-mileage" ? editingMileageId : editingExpenseId;
+  if (entryMode && editing) document.querySelector("#addTitle").textContent = safeRoute === "add-mileage" ? "修改里程" : "修改費用";
+  back.dataset.route = editing ? "records" : "add";
+  back.href = `#${back.dataset.route}`;
+  back.textContent = editing ? "← 返回紀錄" : "← 返回新增";
   if (location.hash !== `#${safeRoute}`) history.replaceState(null, "", `#${safeRoute}`);
-  if (safeRoute === "add" && addTab) setAddTab(addTab);
   if (focusMain) {
     elements.mainContent.focus({ preventScroll: true });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 }
 
@@ -1080,13 +1093,14 @@ async function mutateDatabase(operationName, mutator, { historicalCorrection = f
   setSaving(true, operationName);
   let succeeded = false;
   try {
-    // History-only sandbox preview: the same mutator runs without contacting Firestore.
-    if (localPreview && historicalCorrection) {
+    // Loopback preview changes only demo data; production uses the transaction below.
+    if (localPreview) {
       const next = cloneDatabase(databaseState);
       mutator(next, databaseState);
       assertDocumentSize(next);
       next.revision = databaseState.revision + 1;
       databaseState = next;
+      calculatedState = calculateDatabase(databaseState);
       renderAll();
     } else await runTransaction(db, async (transaction) => {
       const snapshot = await transaction.get(databaseRef);
@@ -1106,7 +1120,7 @@ async function mutateDatabase(operationName, mutator, { historicalCorrection = f
     showToast(error.message || `${operationName}失敗，請重試。`, 5200);
     throw error;
   } finally {
-    saving = false;
+    setSaving(false);
     setWritable(appReady, succeeded ? (localPreview ? "本機預覽，重新整理即還原" : "已同步") : "儲存失敗，請確認連線後重試");
   }
 }
@@ -1127,13 +1141,13 @@ async function requestConfirmation(title, message, confirmLabel = "確認") {
 async function handleMileageSubmit(event) {
   event.preventDefault();
   clearFormErrors();
-  const end = Math.round(safeNumber(elements.endMileage.value, NaN));
+  const end = parseWholeNumber(elements.endMileage.value);
   const user = elements.mileageUser.value;
   const existing = editingMileageId
     ? databaseState.mileageList.find((mileage) => mileage.id === editingMileageId)
     : null;
-  if (!Number.isFinite(end)) {
-    showFieldError(elements.mileageError, "請輸入目前儀表上的總里程。");
+  if (!Number.isSafeInteger(end)) {
+    showFieldError(elements.mileageError, "請輸入儀表上的整數總里程。");
     elements.endMileage.focus();
     return;
   }
@@ -1188,6 +1202,7 @@ async function handleMileageSubmit(event) {
         next.mileageList.push({ ...record, start, diff: record.end - start });
       }
     });
+    document.activeElement?.blur();
     resetMileageForm();
     renderHome();
   } catch {
@@ -1200,8 +1215,10 @@ function resetMileageForm() {
   elements.mileageForm.reset();
   if (!isAdmin()) elements.mileageUser.value = USERS.includes(authorization?.name) ? authorization.name : "Ken";
   elements.mileageFormTitle.textContent = "記錄儀表讀數";
+  if (currentRoute() === "add-mileage") document.querySelector("#addTitle").textContent = "記一筆里程";
   elements.mileageSubmitButton.textContent = "儲存里程";
   elements.cancelMileageEditButton.hidden = true;
+  document.querySelector("#mileagePreview").textContent = "輸入後顯示本次里程";
   showFieldError(elements.mileageError, "");
 }
 
@@ -1220,7 +1237,6 @@ function startMileageEdit(id) {
   elements.mileageSubmitButton.textContent = "儲存修改";
   elements.cancelMileageEditButton.hidden = false;
   navigate("add", { addTab: "mileage" });
-  elements.endMileage.focus();
 }
 
 function showLockedExpenseSplit(value, helperText) {
@@ -1281,8 +1297,10 @@ function selectedExpenseSplitType(type) {
 function resetExpenseForm() {
   editingExpenseId = null;
   elements.expenseForm.reset();
+  if (!isAdmin()) elements.expensePayer.value = USERS.includes(authorization?.name) ? authorization.name : "Ken";
   elements.expenseItem.value = "⚡ 充電";
   elements.expenseFormTitle.textContent = "記錄一筆費用";
+  if (currentRoute() === "add-expense") document.querySelector("#addTitle").textContent = "記一筆費用";
   elements.expenseSubmitButton.textContent = "儲存費用";
   elements.cancelExpenseEditButton.hidden = true;
   configureExpenseSplit();
@@ -1298,7 +1316,7 @@ async function handleExpenseSubmit(event) {
     ? ETC_ITEM
     : (type === "其他" ? elements.customExpenseItem.value.trim() : type);
   const payer = etcOwner ? "Ken" : elements.expensePayer.value;
-  const amount = Math.round(safeNumber(elements.expenseAmount.value, NaN));
+  const amount = parseWholeNumber(elements.expenseAmount.value);
   if (!item) {
     showFieldError(elements.customExpenseError, "請輸入項目名稱。");
     elements.customExpenseItem.focus();
@@ -1337,6 +1355,7 @@ async function handleExpenseSubmit(event) {
         next.expenseList.push(record);
       }
     });
+    document.activeElement?.blur();
     resetExpenseForm();
   } catch {
     elements.expenseAmount.focus();
@@ -1368,7 +1387,6 @@ function startExpenseEdit(id) {
   elements.expenseSubmitButton.textContent = "儲存修改";
   elements.cancelExpenseEditButton.hidden = false;
   navigate("add", { addTab: "expense" });
-  elements.expenseAmount.focus();
 }
 
 async function deleteExpense(id) {
@@ -1682,7 +1700,71 @@ async function handleGoogleSignIn() {
   }
 }
 
+function parseWholeNumber(value) {
+  const text = value.trim();
+  return /^\d+$/.test(text) && Number.isSafeInteger(Number(text)) ? Number(text) : NaN;
+}
+
+function bindInputComfort() {
+  const editable = el => el?.matches("input:not([type=file]), select, textarea");
+  let frame;
+  function updateViewport() {
+    const viewport = window.visualViewport;
+    document.documentElement.style.setProperty("--visible-height", `${viewport?.height || innerHeight}px`);
+    document.documentElement.style.setProperty("--visible-top", `${viewport?.offsetTop || 0}px`);
+  }
+  function revealField() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      updateViewport();
+      const field = document.activeElement;
+      if (!editable(field)) return;
+      const viewport = window.visualViewport;
+      const top = viewport?.offsetTop || 0;
+      const bottom = top + (viewport?.height || innerHeight);
+      const rect = field.getBoundingClientRect();
+      if (rect.top < top + 20 || rect.bottom > bottom - 24) {
+        field.scrollIntoView({ block: "center", behavior: "instant" });
+      }
+    });
+  }
+  document.addEventListener("focusin", event => {
+    document.body.classList.toggle("input-active", editable(event.target));
+    if (editable(event.target)) revealField();
+  });
+  document.addEventListener("focusout", () => setTimeout(() => {
+    document.body.classList.toggle("input-active", editable(document.activeElement));
+  }, 0));
+  window.visualViewport?.addEventListener("resize", revealField);
+  window.addEventListener("resize", revealField);
+  document.addEventListener("click", event => {
+    if (event.target.closest("[data-dismiss-keyboard]")) {
+      document.activeElement?.blur();
+      document.body.classList.remove("input-active");
+    }
+  });
+  for (const form of [elements.mileageForm, elements.expenseForm]) {
+    form.addEventListener("keydown", event => {
+      if (event.key === "Enter" && event.target.tagName === "INPUT" && !event.isComposing) {
+        event.preventDefault(); event.target.blur();
+      }
+    });
+    form.addEventListener("input", () => {
+      const status = form.querySelector(".form-status");
+      status.hidden = true;
+    });
+  }
+  elements.endMileage.addEventListener("input", () => {
+    const end = parseWholeNumber(elements.endMileage.value);
+    const entry = databaseState.mileageList.findIndex(e => e.id === editingMileageId);
+    const previous = editingMileageId ? (entry > 0 ? databaseState.mileageList[entry - 1].end : databaseState.systemState.initialMileage) : latestMileage();
+    document.querySelector("#mileagePreview").textContent = end > previous ? `本次里程 ${formatNumber(end - previous)} km` : "輸入大於上次記錄的儀表總里程";
+  });
+  updateViewport();
+}
+
 function bindEvents() {
+  bindInputComfort();
   document.addEventListener("click", async (event) => {
     const routeButton = event.target.closest("[data-route]");
     if (routeButton) {
@@ -1706,14 +1788,6 @@ function bindEvents() {
   window.addEventListener("hashchange", () => navigate(currentRoute(), { focusMain: false }));
   elements.googleSignInButton.addEventListener("click", handleGoogleSignIn);
   elements.retryButton.addEventListener("click", () => retryAction?.());
-  elements.mileageTab.addEventListener("click", () => setAddTab("mileage", true));
-  elements.expenseTab.addEventListener("click", () => setAddTab("expense", true));
-  document.querySelector('[role="tablist"]').addEventListener("keydown", (event) => {
-    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
-    event.preventDefault();
-    setAddTab(event.key === "ArrowRight" ? "expense" : "mileage");
-    (event.key === "ArrowRight" ? elements.expenseTab : elements.mileageTab).focus();
-  });
   elements.mileageForm.addEventListener("submit", handleMileageSubmit);
   elements.cancelMileageEditButton.addEventListener("click", resetMileageForm);
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
